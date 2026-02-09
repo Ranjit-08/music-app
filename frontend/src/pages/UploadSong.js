@@ -1,31 +1,28 @@
 import axios from "axios";
 import API_URL from "../config";
-import { useNavigate } from "react-router-dom";
 
 export default function UploadSong() {
-  const nav = useNavigate();
-  const token = localStorage.getItem("token");
-
   const upload = async (e) => {
     e.preventDefault();
-    const fd = new FormData();
-    fd.append("title", e.target.title.value);
-    fd.append("artist", e.target.artist.value);
-    fd.append("song", e.target.song.files[0]);
+    const form = new FormData();
+    form.append("song", e.target.song.files[0]);
+    form.append("title", e.target.title.value);
 
-    await axios.post(`${API_URL}/songs/upload`, fd, {
-      headers: { Authorization: token },
+    await axios.post(`${API_URL}/songs`, form, {
+      headers: {
+        Authorization: localStorage.getItem("token"),
+        "Content-Type": "multipart/form-data"
+      }
     });
 
-    nav("/dashboard");
+    alert("Uploaded");
   };
 
   return (
     <form onSubmit={upload}>
       <h2>Upload Song</h2>
-      <input name="title" />
-      <input name="artist" />
-      <input type="file" name="song" />
+      <input name="title" placeholder="Title" required />
+      <input name="song" type="file" required />
       <button>Upload</button>
     </form>
   );

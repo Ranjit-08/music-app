@@ -1,27 +1,28 @@
 import axios from "axios";
+import { useNavigate, Link } from "react-router-dom";
 import API_URL from "../config";
-import { useNavigate } from "react-router-dom";
 
 export default function Signup() {
-  const nav = useNavigate();
+  const navigate = useNavigate();
 
   const signup = async (e) => {
     e.preventDefault();
-    await axios.post(`${API_URL}/auth/signup`, {
-      username: e.target.username.value,
+    const data = {
       email: e.target.email.value,
       password: e.target.password.value,
-    });
-    nav("/login");
+    };
+
+    await axios.post(`${API_URL}/auth/signup`, data);
+    navigate("/login");
   };
 
   return (
     <form onSubmit={signup}>
       <h2>Signup</h2>
-      <input name="username" />
-      <input name="email" />
-      <input name="password" type="password" />
+      <input name="email" placeholder="Email" required />
+      <input name="password" type="password" placeholder="Password" required />
       <button>Signup</button>
+      <p><Link to="/login">Login</Link></p>
     </form>
   );
 }

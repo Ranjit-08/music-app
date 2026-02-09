@@ -1,32 +1,27 @@
 import axios from "axios";
-import API_URL from "../config";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../config";
 
 export default function Dashboard() {
   const [songs, setSongs] = useState([]);
-  const nav = useNavigate();
-  const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
   useEffect(() => {
     axios.get(`${API_URL}/songs`, {
-      headers: { Authorization: token },
+      headers: { Authorization: localStorage.getItem("token") }
     }).then(res => setSongs(res.data));
   }, []);
 
   return (
     <>
       <h2>My Songs</h2>
-      <button onClick={() => nav("/upload")}>Upload</button>
-      <button onClick={() => { localStorage.clear(); nav("/login"); }}>
-        Logout
-      </button>
+      <button onClick={() => navigate("/upload")}>Upload Song</button>
 
-      {songs.map(s => (
-        <div key={s.id}>
-          {s.title}
-          <button onClick={() =>
-            nav(`/player/${encodeURIComponent(s.s3_url)}`)}>
+      {songs.map(song => (
+        <div key={song.id}>
+          {song.title}
+          <button onClick={() => navigate(`/player/${encodeURIComponent(song.url)}`)}>
             Play
           </button>
         </div>
