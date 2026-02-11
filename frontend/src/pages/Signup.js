@@ -1,28 +1,51 @@
-import axios from "axios";
-import { useNavigate, Link } from "react-router-dom";
-import API_URL from "../config";
+import { useState } from "react";
+import API from "../api";
+import { useNavigate } from "react-router-dom";
 
-export default function Signup() {
+function Signup() {
   const navigate = useNavigate();
+  const [form, setForm] = useState({
+    username: "",
+    password: ""
+  });
 
-  const signup = async (e) => {
-    e.preventDefault();
-    const data = {
-      email: e.target.email.value,
-      password: e.target.password.value,
-    };
-
-    await axios.post(`${API_URL}/auth/signup`, data);
-    navigate("/login");
+  const handleSignup = async () => {
+    try {
+      await API.post("/auth/signup", form);
+      alert("Signup successful! Please login.");
+      navigate("/");
+    } catch (err) {
+      alert(err.response?.data?.message || "Signup failed");
+    }
   };
 
   return (
-    <form onSubmit={signup}>
+    <div style={{ padding: "20px" }}>
       <h2>Signup</h2>
-      <input name="email" placeholder="Email" required />
-      <input name="password" type="password" placeholder="Password" required />
-      <button>Signup</button>
-      <p><Link to="/login">Login</Link></p>
-    </form>
+
+      <input
+        placeholder="Username"
+        onChange={(e) =>
+          setForm({ ...form, username: e.target.value })
+        }
+      />
+      <br /><br />
+
+      <input
+        type="password"
+        placeholder="Password"
+        onChange={(e) =>
+          setForm({ ...form, password: e.target.value })
+        }
+      />
+      <br /><br />
+
+      <button onClick={handleSignup}>Signup</button>
+      <br /><br />
+
+      <a href="/">Already have account? Login</a>
+    </div>
   );
 }
+
+export default Signup;

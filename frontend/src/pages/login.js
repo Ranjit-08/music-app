@@ -1,31 +1,23 @@
-import axios from "axios";
-import { useNavigate, Link } from "react-router-dom";
-import API_URL from "../config";
+import { useState } from "react";
+import API from "../api";
 
 export default function Login() {
-  const navigate = useNavigate();
+  const [form, setForm] = useState({ username:"", password:"" });
 
-  const login = async (e) => {
-    e.preventDefault();
-    const email = e.target.email.value;
-    const password = e.target.password.value;
-
-    try {
-      const res = await axios.post(`${API_URL}/auth/login`, { email, password });
-      localStorage.setItem("token", res.data.token);
-      navigate("/dashboard");
-    } catch {
-      alert("Login failed");
-    }
+  const login = async () => {
+    const res = await API.post("/auth/login", form);
+    localStorage.setItem("token", res.data.token);
+    window.location = "/videos";
   };
 
   return (
-    <form onSubmit={login}>
+    <div>
       <h2>Login</h2>
-      <input name="email" placeholder="Email" required />
-      <input name="password" type="password" placeholder="Password" required />
-      <button>Login</button>
-      <p><Link to="/signup">Signup</Link></p>
-    </form>
+      <input placeholder="Username"
+        onChange={e=>setForm({...form,username:e.target.value})}/>
+      <input type="password" placeholder="Password"
+        onChange={e=>setForm({...form,password:e.target.value})}/>
+      <button onClick={login}>Login</button>
+    </div>
   );
 }

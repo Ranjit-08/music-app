@@ -1,19 +1,20 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
-import UploadSong from "./pages/UploadSong";
-import Player from "./pages/Player";
+import Upload from "./pages/Upload";
+import Videos from "./pages/Videos";
 
-export default function App() {
+function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/login" />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/upload" element={<UploadSong />} />
-      <Route path="/player/:url" element={<Player />} />
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/upload" element={<Upload />} />
+        <Route path="/videos" element={<Videos />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
+
+export default App;
