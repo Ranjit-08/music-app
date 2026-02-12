@@ -1,23 +1,38 @@
-import { useState } from "react";
-import API from "../api";
+import React, { useState } from "react";
+import "./Login.css";
 
-export default function Login() {
-  const [form, setForm] = useState({ username:"", password:"" });
+function Login() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-  const login = async () => {
-    const res = await API.post("/auth/login", form);
-    localStorage.setItem("token", res.data.token);
-    window.location = "/videos";
+  const handleLogin = (e) => {
+    e.preventDefault();
+    console.log(username, password);
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      <input placeholder="Username"
-        onChange={e=>setForm({...form,username:e.target.value})}/>
-      <input type="password" placeholder="Password"
-        onChange={e=>setForm({...form,password:e.target.value})}/>
-      <button onClick={login}>Login</button>
+    <div className="login-container">
+      <form className="login-card" onSubmit={handleLogin}>
+        <h2>Welcome Back 👋</h2>
+
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button type="submit">Login</button>
+      </form>
     </div>
   );
 }
+
+export default Login;
