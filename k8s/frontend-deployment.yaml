@@ -16,7 +16,7 @@ spec:
         - name: ghcr-secret   # Needed if repo is private
       containers:
         - name: frontend
-          image: ghcr.io/ranjit-08/music-app/frontend:c855525
+          image: ghcr.io/ranjit-08/music-app/frontend:97a6ce0
           imagePullPolicy: Always
           ports:
             - containerPort: 80
