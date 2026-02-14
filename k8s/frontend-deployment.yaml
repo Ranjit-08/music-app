@@ -12,8 +12,11 @@ spec:
       labels:
         app: frontend
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret   # Needed if repo is private
       containers:
         - name: frontend
-          image: yourdockerhub/video-frontend:latest
+          image: ghcr.io/ranjit-08/music-app/frontend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
