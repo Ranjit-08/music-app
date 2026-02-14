@@ -1,3 +1,5 @@
+## Database configuration
+
 CREATE DATABASE videodb;
 USE videodb;
 
