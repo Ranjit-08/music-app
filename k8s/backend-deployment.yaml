@@ -16,7 +16,7 @@ spec:
         - name: ghcr-secret   # Needed if repo is private
       containers:
         - name: backend
-          image: ghcr.io/ranjit-08/music-app/backend:97a6ce0
+          image: 738556366555.dkr.ecr.us-east-1.amazonaws.com/backend:ee19cfd
           imagePullPolicy: Always
           ports:
             - containerPort: 5000
