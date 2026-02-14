@@ -1,4 +1,4 @@
-name: Build Docker Images & Update K8s YAML
+name: Build Docker Images & Push to ECR
 
 on:
   push:
@@ -7,49 +7,82 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
-  build-and-update:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Login to GHCR
-        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      # 🔐 Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Set image tag
+      # 🔹 Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 🔹 Set Image Tag
+      - name: Set Image Tag
         id: vars
         run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      # 🔹 Build Backend
+      # 🔹 Create ECR Repositories (if not exist)
+      - name: Create Backend ECR Repo
+        run: |
+          aws ecr describe-repositories --repository-names backend || \
+          aws ecr create-repository --repository-name backend
+
+      - name: Create Frontend ECR Repo
+        run: |
+          aws ecr describe-repositories --repository-names frontend || \
+          aws ecr create-repository --repository-name frontend
+
+      # 🔹 Build Backend Image
       - name: Build Backend Image
         run: |
-          docker build -t ghcr.io/ranjit-08/music-app/backend:${{ steps.vars.outputs.TAG }} ./backend
+          docker build -t backend:${{ steps.vars.outputs.TAG }} ./backend
+
+      - name: Tag Backend Image
+        run: |
+          docker tag backend:${{ steps.vars.outputs.TAG }} \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend:${{ steps.vars.outputs.TAG }}
 
       - name: Push Backend Image
         run: |
-          docker push ghcr.io/ranjit-08/music-app/backend:${{ steps.vars.outputs.TAG }}
+          docker push \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend:${{ steps.vars.outputs.TAG }}
 
-      # 🔹 Build Frontend
+      # 🔹 Build Frontend Image
       - name: Build Frontend Image
         run: |
-          docker build -t ghcr.io/ranjit-08/music-app/frontend:${{ steps.vars.outputs.TAG }} ./frontend
+          docker build -t frontend:${{ steps.vars.outputs.TAG }} ./frontend
+
+      - name: Tag Frontend Image
+        run: |
+          docker tag frontend:${{ steps.vars.outputs.TAG }} \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:${{ steps.vars.outputs.TAG }}
 
       - name: Push Frontend Image
         run: |
-          docker push ghcr.io/ranjit-08/music-app/frontend:${{ steps.vars.outputs.TAG }}
+          docker push \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:${{ steps.vars.outputs.TAG }}
 
       # 🔹 Update K8s YAML
       - name: Update Backend Image in YAML
         run: |
-          sed -i "s|image:.*backend.*|image: ghcr.io/ranjit-08/music-app/backend:${{ steps.vars.outputs.TAG }}|g" k8s/backend-deployment.yaml
+          sed -i "s|image:.*backend.*|image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend:${{ steps.vars.outputs.TAG }}|g" k8s/backend-deployment.yaml
 
       - name: Update Frontend Image in YAML
         run: |
-          sed -i "s|image:.*frontend.*|image: ghcr.io/ranjit-08/music-app/frontend:${{ steps.vars.outputs.TAG }}|g" k8s/frontend-deployment.yaml
+          sed -i "s|image:.*frontend.*|image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:${{ steps.vars.outputs.TAG }}|g" k8s/frontend-deployment.yaml
 
       - name: Commit and Push Changes
         run: |
