@@ -1,0 +1,60 @@
+name: Build Docker Images & Update K8s YAML
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-and-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Set image tag
+        id: vars
+        run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      # 🔹 Build Backend
+      - name: Build Backend Image
+        run: |
+          docker build -t ghcr.io/ranjit-08/music-app/backend:${{ steps.vars.outputs.TAG }} ./backend
+
+      - name: Push Backend Image
+        run: |
+          docker push ghcr.io/ranjit-08/music-app/backend:${{ steps.vars.outputs.TAG }}
+
+      # 🔹 Build Frontend
+      - name: Build Frontend Image
+        run: |
+          docker build -t ghcr.io/ranjit-08/music-app/frontend:${{ steps.vars.outputs.TAG }} ./frontend
+
+      - name: Push Frontend Image
+        run: |
+          docker push ghcr.io/ranjit-08/music-app/frontend:${{ steps.vars.outputs.TAG }}
+
+      # 🔹 Update K8s YAML
+      - name: Update Backend Image in YAML
+        run: |
+          sed -i "s|image:.*backend.*|image: ghcr.io/ranjit-08/music-app/backend:${{ steps.vars.outputs.TAG }}|g" k8s/backend-deployment.yaml
+
+      - name: Update Frontend Image in YAML
+        run: |
+          sed -i "s|image:.*frontend.*|image: ghcr.io/ranjit-08/music-app/frontend:${{ steps.vars.outputs.TAG }}|g" k8s/frontend-deployment.yaml
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add k8s/
+          git commit -m "Update image tags to ${{ steps.vars.outputs.TAG }}" || echo "No changes to commit"
+          git push
