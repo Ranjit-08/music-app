@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Music — MusicApp</title>
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    @media (max-width: 768px) { .upload-grid { grid-template-columns: 1fr; } }
+
+    /* Drop Zone */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 60px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: var(--card);
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--primary);
+      background: rgba(124,58,237,0.05);
+      box-shadow: 0 0 40px var(--primary-glow);
+    }
+    .drop-zone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 56px; margin-bottom: 16px; }
+    .drop-title {
+      font-family: var(--font-display);
+      font-size: 20px; font-weight: 700; margin-bottom: 8px;
+    }
+    .drop-sub { color: var(--muted); font-size: 14px; }
+
+    /* Cover drop zone */
+    .cover-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s;
+      background: var(--card);
+    }
+    .cover-zone:hover { border-color: var(--primary); }
+    .cover-zone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .cover-preview {
+      position: absolute; inset: 0;
+      object-fit: cover; width: 100%; height: 100%;
+      display: none;
+    }
+    .cover-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.5);
+      display: none; align-items: center; justify-content: center;
+      font-size: 13px; color: #fff;
+    }
+    .cover-zone:hover .cover-overlay { display: flex; }
+
+    /* Audio Preview */
+    .audio-selected {
+      background: rgba(124,58,237,0.08);
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-top: 16px;
+      display: none;
+    }
+    .audio-file-name {
+      font-weight: 600; margin-bottom: 4px; font-size: 15px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .audio-file-size { color: var(--muted); font-size: 13px; }
+
+    /* Progress Bar */
+    .progress-wrap {
+      display: none;
+      background: var(--border);
+      border-radius: 50px;
+      height: 6px;
+      margin-top: 20px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--pink));
+      border-radius: 50px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .progress-label {
+      font-size: 13px; color: var(--muted); margin-top: 8px; display: none;
+    }
+
+    /* My Uploads */
+    .my-uploads-section { margin-top: 48px; }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+    }
+    .section-title {
+      font-family: var(--font-display); font-size: 22px; font-weight: 700;
+    }
+
+    .song-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+    }
+    .song-row:hover { border-color: var(--border); }
+
+    .song-cover-thumb {
+      width: 48px; height: 48px; border-radius: 8px;
+      object-fit: cover; background: var(--surface);
+      flex-shrink: 0; display: flex; align-items: center;
+      justify-content: center; font-size: 20px;
+    }
+    .song-cover-thumb img { width: 100%; height: 100%; border-radius: 8px; object-fit: cover; }
+
+    .song-info { flex: 1; min-width: 0; }
+    .song-row-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .song-row-meta { color: var(--muted); font-size: 13px; }
+    .song-row-size { color: var(--muted); font-size: 12px; min-width: 70px; text-align: right; }
+
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: var(--muted);
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="logo" href="play.html">🎵 Music<span>App</span></a>
+  <div class="nav-links">
+    <a href="play.html">🎧 Play</a>
+    <a href="upload.html" class="active">⬆️ Upload</a>
+    <a href="profile.html">👤 Profile</a>
+  </div>
+  <button class="btn-logout" onclick="logout()">Sign Out</button>
+</nav>
+
+<div class="page-container">
+  <h1 class="page-title">Upload <span>Music</span></h1>
+  <p class="page-desc">Share your tracks — they're stored securely in the cloud.</p>
+
+  <div class="upload-grid">
+
+    <!-- LEFT: Drop zone + form -->
+    <div>
+      <!-- Audio Drop Zone -->
+      <div class="drop-zone" id="audioZone">
+        <input type="file" id="audioFile" accept=".mp3,.wav,.ogg,.flac,.m4a,.aac"
+               onchange="audioSelected(this)" />
+        <div class="drop-icon">🎵</div>
+        <div class="drop-title">Drop your audio here</div>
+        <div class="drop-sub">MP3, WAV, FLAC, OGG, M4A, AAC</div>
+      </div>
+
+      <div class="audio-selected" id="audioPreview">
+        <div class="audio-file-name" id="audioName"></div>
+        <div class="audio-file-size" id="audioSize"></div>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-label" id="progressLabel"></div>
+
+      <div class="alert alert-error"   id="uploadErr" style="margin-top:16px;"></div>
+      <div class="alert alert-success" id="uploadSuc" style="margin-top:16px;"></div>
+    </div>
+
+    <!-- RIGHT: Metadata + cover -->
+    <div class="card">
+      <div class="form-group">
+        <label>Song Title *</label>
+        <input type="text" id="title" placeholder="e.g. Midnight Drive" />
+      </div>
+      <div class="form-group">
+        <label>Artist *</label>
+        <input type="text" id="artist" placeholder="e.g. The Weeknd" />
+      </div>
+      <div class="form-group">
+        <label>Album</label>
+        <input type="text" id="album" placeholder="Optional" />
+      </div>
+      <div class="form-group">
+        <label>Genre</label>
+        <select id="genre">
+          <option value="">Select genre</option>
+          <option>Pop</option><option>Hip-Hop</option><option>R&B</option>
+          <option>Electronic</option><option>Rock</option><option>Jazz</option>
+          <option>Classical</option><option>Country</option><option>Lo-Fi</option>
+          <option>Indie</option><option>Afrobeats</option><option>Reggae</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Cover Image (optional)</label>
+        <div class="cover-zone" id="coverZone">
+          <input type="file" id="coverFile" accept="image/*" onchange="coverSelected(this)" />
+          <img class="cover-preview" id="coverPreview" alt="cover" />
+          <div class="cover-overlay">Change Cover</div>
+          <div id="coverPlaceholder">
+            <div style="font-size:36px;margin-bottom:8px;">🖼️</div>
+            <div style="font-size:13px;color:var(--muted);">Upload cover art</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="uploadBtn" onclick="doUpload()">
+        <span id="uploadText">⬆️ Upload Song</span>
+        <div class="spinner" id="uploadSpinner"></div>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- My Uploads -->
+  <div class="my-uploads-section">
+    <div class="section-header">
+      <div class="section-title">My Uploads</div>
+      <button class="btn btn-secondary btn-sm" onclick="loadMySongs()">↻ Refresh</button>
+    </div>
+    <div id="mySongs"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+  requireAuth();
+
+  function formatBytes(b) {
+    if (!b) return '—';
+    if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+    return (b/(1024*1024)).toFixed(1) + ' MB';
+  }
+
+  function audioSelected(input) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById('audioName').textContent = file.name;
+    document.getElementById('audioSize').textContent = formatBytes(file.size);
+    document.getElementById('audioPreview').style.display = 'block';
+
+    // Auto-fill title from filename
+    const titleField = document.getElementById('title');
+    if (!titleField.value) {
+      titleField.value = file.name.replace(/\.[^.]+$/, '');
+    }
+  }
+
+  function coverSelected(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.getElementById('coverPreview');
+      img.src = e.target.result;
+      img.style.display = 'block';
+      document.getElementById('coverPlaceholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Drag and drop
+  const zone = document.getElementById('audioZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      document.getElementById('audioFile').files = e.dataTransfer.files;
+      audioSelected(document.getElementById('audioFile'));
+    }
+  });
+
+  function showMsg(id, msg, show=true) {
+    const el = document.getElementById(id);
+    if (msg) el.textContent = msg;
+    el.style.display = show ? 'block' : 'none';
+  }
+
+  async function doUpload() {
+    showMsg('uploadErr', '', false);
+    showMsg('uploadSuc', '', false);
+
+    const audioFile = document.getElementById('audioFile').files[0];
+    const title     = document.getElementById('title').value.trim();
+    const artist    = document.getElementById('artist').value.trim();
+    const album     = document.getElementById('album').value.trim();
+    const genre     = document.getElementById('genre').value;
+    const coverFile = document.getElementById('coverFile').files[0];
+
+    if (!audioFile) return showMsg('uploadErr', 'Please select an audio file.', true);
+    if (!title)     return showMsg('uploadErr', 'Song title is required.', true);
+    if (!artist)    return showMsg('uploadErr', 'Artist name is required.', true);
+
+    const formData = new FormData();
+    formData.append('audio', audioFile);
+    formData.append('title', title);
+    formData.append('artist', artist);
+    formData.append('album', album);
+    formData.append('genre', genre);
+    if (coverFile) formData.append('cover', coverFile);
+
+    // Show progress
+    document.getElementById('progressWrap').style.display = 'block';
+    document.getElementById('progressLabel').style.display = 'block';
+    document.getElementById('uploadText').style.display = 'none';
+    document.getElementById('uploadSpinner').style.display = 'block';
+    document.getElementById('uploadBtn').disabled = true;
+
+    // Simulate progress while uploading
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress = Math.min(progress + Math.random() * 8, 85);
+      document.getElementById('progressBar').style.width = progress + '%';
+      document.getElementById('progressLabel').textContent = `Uploading to S3... ${Math.round(progress)}%`;
+    }, 200);
+
+    try {
+      await api.upload('/songs/upload', formData);
+
+      clearInterval(progressInterval);
+      document.getElementById('progressBar').style.width = '100%';
+      document.getElementById('progressLabel').textContent = 'Upload complete! ✓';
+      showMsg('uploadSuc', '🎉 Song uploaded successfully!', true);
+
+      // Reset form
+      setTimeout(() => {
+        document.getElementById('audioFile').value = '';
+        document.getElementById('coverFile').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('artist').value = '';
+        document.getElementById('album').value = '';
+        document.getElementById('genre').value = '';
+        document.getElementById('audioPreview').style.display = 'none';
+        document.getElementById('coverPreview').style.display = 'none';
+        document.getElementById('coverPlaceholder').style.display = 'block';
+        document.getElementById('progressWrap').style.display = 'none';
+        document.getElementById('progressLabel').style.display = 'none';
+        loadMySongs();
+      }, 2000);
+
+    } catch (e) {
+      clearInterval(progressInterval);
+      document.getElementById('progressWrap').style.display = 'none';
+      document.getElementById('progressLabel').style.display = 'none';
+      showMsg('uploadErr', e.error || 'Upload failed. Please try again.', true);
+    } finally {
+      document.getElementById('uploadText').style.display = 'inline';
+      document.getElementById('uploadSpinner').style.display = 'none';
+      document.getElementById('uploadBtn').disabled = false;
+    }
+  }
+
+  async function deleteSong(id) {
+    if (!confirm('Delete this song permanently?')) return;
+    try {
+      await api.del(`/songs/${id}`);
+      loadMySongs();
+    } catch (e) {
+      alert(e.error || 'Failed to delete.');
+    }
+  }
+
+  async function loadMySongs() {
+    const container = document.getElementById('mySongs');
+    container.innerHTML = '<div style="color:var(--muted);padding:20px;">Loading...</div>';
+    try {
+      const data = await api.get('/songs/my');
+      if (!data.songs.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">🎵</div>
+            <div>You haven't uploaded any songs yet.</div>
+          </div>`;
+        return;
+      }
+      container.innerHTML = data.songs.map(s => `
+        <div class="song-row">
+          <div class="song-cover-thumb">
+            ${s.cover_url
+              ? `<img src="${s.cover_url}" alt="cover" />`
+              : '🎵'}
+          </div>
+          <div class="song-info">
+            <div class="song-row-title">${escHtml(s.title)}</div>
+            <div class="song-row-meta">${escHtml(s.artist)}${s.album ? ' · ' + escHtml(s.album) : ''}${s.genre ? ' · ' + escHtml(s.genre) : ''}</div>
+          </div>
+          <div class="song-row-size">${formatBytes(s.file_size)}</div>
+          <button class="btn btn-danger btn-sm" onclick="deleteSong(${s.id})">Delete</button>
+        </div>
+      `).join('');
+    } catch (e) {
+      container.innerHTML = '<div style="color:var(--danger);">Failed to load songs.</div>';
+    }
+  }
+
+  function escHtml(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  loadMySongs();
+</script>
+</body>
+</html>
