@@ -1,5 +1,5 @@
 // config.js — shared across all pages
-const API_BASE = 'http://localhost:5000/api';  // Change to your EC2/ELB URL in production
+const API_BASE = 'http://public-ip of backend/api';  // Change to your EC2/ELB URL in production
 
 const api = {
   async request(method, path, body = null, auth = true) {
