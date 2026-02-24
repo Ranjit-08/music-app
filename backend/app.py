@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_mail import Mail, Message
 import pymysql
@@ -12,9 +12,8 @@ import datetime
 from functools import wraps
 from botocore.exceptions import NoCredentialsError
 import uuid
-from dotenv import load_dotenv   # ← add this
-load_dotenv()                     # ← add this
-
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
@@ -95,6 +94,17 @@ def init_db():
                 file_size   BIGINT DEFAULT 0,
                 uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id         INT AUTO_INCREMENT PRIMARY KEY,
+                email      VARCHAR(255) NOT NULL,
+                token      VARCHAR(255) NOT NULL UNIQUE,
+                expires_at DATETIME NOT NULL,
+                used       BOOLEAN DEFAULT FALSE,
+                INDEX idx_token (token),
+                INDEX idx_email (email)
             )
         """)
     conn.close()
@@ -309,6 +319,96 @@ def me():
 # ═══════════════════════════════════════════════════════════════════════════════
 #  MUSIC ROUTES
 # ═══════════════════════════════════════════════════════════════════════════════
+
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  FORGOT / RESET PASSWORD ROUTES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/api/auth/forgot-password', methods=['POST'])
+def forgot_password():
+    data  = request.get_json()
+    email = data.get('email', '').strip().lower()
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
+    conn = get_db()
+    try:
+        with conn.cursor() as c:
+            c.execute("SELECT id, name FROM users WHERE email=%s AND verified=TRUE", (email,))
+            user = c.fetchone()
+            if user:
+                reset_token = str(uuid.uuid4()).replace('-','') + str(uuid.uuid4()).replace('-','')
+                expires     = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                c.execute("UPDATE password_reset_tokens SET used=TRUE WHERE email=%s", (email,))
+                c.execute("INSERT INTO password_reset_tokens (email, token, expires_at) VALUES (%s,%s,%s)",
+                          (email, reset_token, expires))
+                app_url    = os.environ.get('APP_URL', 'http://localhost')
+                reset_link = f"{app_url}/reset-password.html?token={reset_token}"
+                msg      = Message('Reset your MusicApp password', recipients=[email])
+                msg.html = f"""
+                <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:30px;background:#0f0f0f;color:#fff;border-radius:12px;">
+                    <h1 style="color:#7c3aed;">MusicApp</h1>
+                    <p>Hi {user['name']}, we received a request to reset your password.</p>
+                    <div style="text-align:center;margin:30px 0;">
+                        <a href="{reset_link}" style="background:#7c3aed;color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:bold;font-size:16px;">
+                            Reset My Password
+                        </a>
+                    </div>
+                    <p style="color:#666;font-size:13px;">This link expires in <strong>1 hour</strong>.</p>
+                    <p style="color:#666;font-size:12px;">If you did not request this, ignore this email.</p>
+                </div>
+                """
+                mail.send(msg)
+        return jsonify({'message': 'If this email is registered, a reset link has been sent.'}), 200
+    finally:
+        conn.close()
+
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    data         = request.get_json()
+    token        = data.get('token', '').strip()
+    new_password = data.get('password', '')
+    if not token or not new_password:
+        return jsonify({'error': 'Token and new password are required'}), 400
+    if len(new_password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+    conn = get_db()
+    try:
+        with conn.cursor() as c:
+            c.execute("""
+                SELECT id, email FROM password_reset_tokens
+                WHERE token=%s AND used=FALSE AND expires_at > NOW()
+            """, (token,))
+            token_row = c.fetchone()
+            if not token_row:
+                return jsonify({'error': 'This reset link is invalid or has expired.'}), 400
+            hashed = hash_password(new_password)
+            c.execute("UPDATE users SET password=%s WHERE email=%s", (hashed, token_row['email']))
+            c.execute("UPDATE password_reset_tokens SET used=TRUE WHERE id=%s", (token_row['id'],))
+        return jsonify({'message': 'Password reset successful. You can now log in.'}), 200
+    finally:
+        conn.close()
+
+
+@app.route('/api/auth/verify-reset-token', methods=['POST'])
+def verify_reset_token():
+    data  = request.get_json()
+    token = data.get('token', '').strip()
+    if not token:
+        return jsonify({'valid': False}), 400
+    conn = get_db()
+    try:
+        with conn.cursor() as c:
+            c.execute("""
+                SELECT id FROM password_reset_tokens
+                WHERE token=%s AND used=FALSE AND expires_at > NOW()
+            """, (token,))
+            row = c.fetchone()
+            return jsonify({'valid': bool(row)}), 200
+    finally:
+        conn.close()
 
 @app.route('/api/songs/upload', methods=['POST'])
 @token_required
