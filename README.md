@@ -1,25 +1,42 @@
-# STEP 1 — AWS Setup (Do this first, before touching EC2)
-Create RDS (MySQL Database)
+# 🎵 MusicApp — Deployment Guide
 
-AWS Console → RDS → Create database
-Engine: MySQL 8.0
-Template: Free tier
-DB identifier: musicapp-db
-Username: admin | Password: YourPassword123! ← save this
-Connectivity → Public access: No
-Create new security group: name it musicapp-rds-sg
-Click Create database → wait 5 mins
-Copy the Endpoint URL (you'll need it later)
+---
 
-# step-2 Create S3 Bucket
+## STEP 1 — Create RDS (MySQL Database)
 
-AWS Console → S3 → Create bucket
-Bucket name: musicapp-songs-yourname (must be unique globally)
-Region: us-east-1
-Keep "Block all public access" ON
-Create bucket
+1. AWS Console → **RDS** → **Create database**
+2. Engine: **MySQL 8.0**
+3. Template: **Free tier**
+4. DB identifier: `musicapp-db`
+5. Master username: `admin`
+6. Master password: `YourPassword123!` ← save this
+7. Connectivity → Public access: **No**
+8. Create new security group → name it `musicapp-rds-sg`
+9. Click **Create database** → wait 5 mins
+10. Copy the **Endpoint URL** → you will need it later
 
-# Then add CORS — go to S3 → your bucket → Permissions → CORS → Edit and paste:
+### Allow EC2 to access RDS:
+1. EC2 → your instance → note its **Security Group name**
+2. RDS → your database → **Connectivity** → click its security group
+3. Inbound rules → Edit → Add rule:
+   - Type: **MySQL/Aurora** (port 3306)
+   - Source: select your **EC2 security group**
+4. Save
+
+---
+
+## STEP 2 — Create S3 Bucket
+
+1. AWS Console → **S3** → **Create bucket**
+2. Bucket name: `musicapp-songs-yourname` ← must be globally unique
+3. Region: `us-east-1`
+4. Keep **Block all public access** ON
+5. Click **Create bucket**
+
+### Add CORS to S3 Bucket:
+S3 → your bucket → **Permissions** → **CORS** → Edit → paste:
+
+```json
 [
   {
     "AllowedHeaders": ["*"],
@@ -28,80 +45,180 @@ Create bucket
     "ExposeHeaders": []
   }
 ]
+```
 
-# Create IAM User (AWS Keys for your app)
+---
 
-AWS Console → IAM → Users → Create user
-Username: musicapp-backend
-Attach policy: AmazonS3FullAccess
-Create user → open the user → Security credentials → Create access key
-Use case: Application running outside AWS
-Save the Access Key ID and Secret Access Key — shown only once!
+## STEP 3 — Create IAM User (AWS Access Keys)
 
-# Launch EC2
+1. AWS Console → **IAM** → **Users** → **Create user**
+2. Username: `musicapp-backend`
+3. Attach policy: **AmazonS3FullAccess**
+4. Create user → open the user → **Security credentials** → **Create access key**
+5. Use case: **Application running outside AWS**
+6. **Save Access Key ID and Secret Access Key** ← shown only once!
+
+---
+
+## STEP 4 — Launch EC2 Instance
+
+1. AWS Console → **EC2** → **Launch instance**
+2. Name: `musicapp-server`
+3. AMI: **Amazon Linux 2023**
+4. Instance type: `t2.micro` (free tier)
+5. Key pair: Create new → download `.pem` file
+6. Security group inbound rules:
+   - SSH port **22** → My IP
+   - HTTP port **80** → Anywhere (0.0.0.0/0)
+7. Storage: 20 GB
+8. Click **Launch** → copy the **Public IP**
+
+---
+
+## STEP 5 — SSH into EC2
+
+```bash
+chmod 400 musicapp-key.pem
+ssh -i musicapp-key.pem ec2-user@YOUR_EC2_PUBLIC_IP
+```
+
+---
+
+## STEP 6 — Install Required Software
+
+```bash
 sudo yum update -y
-sudo yum install -y python3 python3-pip python3-venv nginx git
-yum install mariadb105-server -y
+sudo yum install -y python3 python3-pip git nginx
+sudo yum install -y mariadb105
+```
 
-# create database
-mysql -h database-1.czg8gc6gg0gv.us-east-1.rds.amazonaws.com -u admin -p
+---
+
+## STEP 7 — Create the Database
+
+```bash
+mysql -h YOUR_RDS_ENDPOINT -u admin -p
+```
+
+Enter your RDS password when prompted, then run:
+
+```sql
 CREATE DATABASE musicapp;
 exit;
+```
 
-# git clone 
- 1. Clone
+---
+
+## STEP 8 — Clone Your GitHub Repo
+
+```bash
 git clone https://github.com/YOUR_USERNAME/music-app.git
-cd ~/music-app
+cd music-app
+```
 
- 2. Create virtual environment
+---
+
+## STEP 9 — Create Python Virtual Environment
+
+```bash
 python3 -m venv venv
 source venv/bin/activate
+```
 
- 3. Install packages (requirements.txt is inside backend/)
+---
+
+## STEP 10 — Install Python Packages
+
+```bash
 pip install -r backend/requirements.txt
+pip install cryptography
+```
 
- 4. Create .env file
-    vi .env
-    paste the code from git
-    ex:
+---
 
-DB_HOST=database-1.czg8gc6gg0gv.us-east-1.rds.amazonaws.com  (rds-endpoint)
+## STEP 11 — Create .env File
+
+```bash
+vi backend/.env
+```
+
+Press `i` to start typing, then paste and fill in your real values:
+
+```
+DB_HOST=your-rds-endpoint.us-east-1.rds.amazonaws.com
 DB_USER=admin
-DB_PASSWORD=database-1 (master-password)
+DB_PASSWORD=your-rds-master-password
 DB_NAME=musicapp
 DB_PORT=3306
-S3_BUCKET=your-music-app-bucket-23rdfeb (bucket-name)
-S3_REGION=us-east-1 
-AWS_ACCESS_KEY=AKIA3FLD2IFBHCES4H44   (accesskey  of your user)
-AWS_SECRET_KEY=WrPUSeaEYGtUK6OGnf8etof8bQlY9W8Zb5AIzpq6  (secret access key of your user)
-MAIL_SERVER=smtp.gmail.com (dont change)
-MAIL_PORT=587 
-MAIL_USERNAME=qintondecock@gmail.com   (email.id)
-MAIL_PASSWORD=smvgngeiybqxegqh  (go to gmail--> security-sign in 2 step verification need to on --> search for the app password  --> give a name like music-app then create paste it without any soace)
-SECRET_KEY=anylongrandomstringhere123!@#xyz
 
+S3_BUCKET=your-bucket-name
+S3_REGION=us-east-1
+AWS_ACCESS_KEY=your-iam-access-key
+AWS_SECRET_KEY=your-iam-secret-key
 
-    
-note:
-It can be ANY random string you make up
-SECRET_KEY=anylongrandomstringhere123!@#xyz     ← fine
-SECRET_KEY=MyMusicApp2024!SuperSecret           ← fine
-SECRET_KEY=x7k#mP9@qL2nR5vT8wY1uZ3cA6bD0eF    ← better (more random)
-Two rules:
-Make it long (at least 30 characters)
-Never share it or push it to GitHub
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your16charapppassword
 
-# 5. Init database
+SECRET_KEY=any-long-random-string-minimum-30-characters
+```
+
+Press `Esc` → type `:wq` → press `Enter` to save.
+
+---
+
+### How to get Gmail App Password:
+1. Go to **myaccount.google.com** → Security
+2. Turn on **2-Step Verification**
+3. Search **App Passwords** in search bar
+4. Create one → name it `MusicApp`
+5. Copy the 16-character password → paste it **without spaces**
+
+### Secret Key Rules:
+- Make it at least 30 characters long
+- Can be anything random e.g. `x7k#mP9@qLnR5vT8wY1uZ3cA6bD0eF`
+- **Never push it to GitHub**
+
+---
+
+## STEP 12 — Add load_dotenv to app.py
+
+```bash
+vi backend/app.py
+```
+
+Press `i`, go to the very top of the file and add these 2 lines right after all the imports:
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+```
+
+Press `Esc` → type `:wq` → press `Enter` to save.
+
+---
+
+## STEP 13 — Initialize Database Tables
+
+```bash
 cd backend
-pip install cryptography
 python3 -c 'from app import init_db; init_db(); print("Database ready")'
 cd ..
-# add musicapp service
+```
 
+You should see: `Database ready`
+
+---
+
+## STEP 14 — Create Gunicorn Service
+
+```bash
 nano /etc/systemd/system/musicapp.service
 ```
 
 Paste this exactly:
+
 ```
 [Unit]
 Description=MusicApp Flask Backend
@@ -122,19 +239,36 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
+```
 
+Save: `Ctrl+X` → `Y` → `Enter`
+
+Then run:
+
+```bash
 mkdir -p /var/log/musicapp
-
 sudo systemctl daemon-reload
 sudo systemctl enable musicapp
 sudo systemctl start musicapp
 sudo systemctl status musicapp
+```
 
-# root inside 
+You should see **active (running)** in green ✅
+
+---
+
+## STEP 15 — Configure Nginx
+
+```bash
 nano /etc/nginx/conf.d/musicapp.conf
+```
+
+Paste this (replace with your real EC2 public IP):
+
+```nginx
 server {
     listen 80;
-    server_name 54.82.18.108;
+    server_name YOUR_EC2_PUBLIC_IP;
 
     location / {
         root /root/music-app/frontend;
@@ -157,16 +291,90 @@ server {
         proxy_pass http://127.0.0.1:5000/health;
     }
 }
+```
 
+Save: `Ctrl+X` → `Y` → `Enter`
+
+Then run:
+
+```bash
 sudo nginx -t
 sudo systemctl restart nginx
 sudo systemctl enable nginx
-#  Update API URL in frontend
-cd frotend
-vi frontend/config.js
+```
 
-change the url..
-const API_BASE = 'http://backend-public-ip/api';
+`nginx -t` must say **syntax is ok** before continuing ✅
 
+---
+
+## STEP 16 — Fix Permissions
+
+```bash
 chmod 755 /root
 chmod -R 755 /root/music-app/frontend
+```
+
+---
+
+## STEP 17 — Update API URL in Frontend
+
+```bash
+nano /root/music-app/frontend/config.js
+```
+
+Change line 2 to your EC2 public IP (no port number):
+
+```javascript
+const API_BASE = 'http://YOUR_EC2_PUBLIC_IP/api';
+```
+
+Save: `Ctrl+X` → `Y` → `Enter`
+
+> ⚠️ Do NOT put `:5000` in this URL. Nginx handles the routing automatically.
+
+---
+
+## STEP 18 — Open Your App 🎉
+
+Open your browser and go to:
+
+```
+http://YOUR_EC2_PUBLIC_IP/signup.html
+```
+
+---
+
+## Useful Commands
+
+```bash
+# Check backend status
+sudo systemctl status musicapp
+
+# View backend errors live
+sudo journalctl -u musicapp -f
+
+# Restart backend
+sudo systemctl restart musicapp
+
+# Restart nginx
+sudo systemctl restart nginx
+
+# View nginx error log
+sudo tail -f /var/log/nginx/error.log
+```
+
+---
+
+## Update Code in Future
+
+```bash
+# On your LOCAL machine — push changes
+git add .
+git commit -m "describe your change"
+git push origin main
+
+# On EC2 — pull changes
+cd ~/music-app
+git pull origin main
+sudo systemctl restart musicapp
+```
