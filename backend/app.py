@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mail import Mail, Message
 import pymysql
@@ -12,6 +12,9 @@ import datetime
 from functools import wraps
 from botocore.exceptions import NoCredentialsError
 import uuid
+from dotenv import load_dotenv   # ← add this
+load_dotenv()                     # ← add this
+
 
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
