@@ -161,7 +161,7 @@ MAIL_PORT=587
 MAIL_USERNAME=your-email@gmail.com
 MAIL_PASSWORD=your16charapppassword
 
-SECRET_KEY=any-long-random-string-minimum-30-characters
+SECRET_KEY=anylongrandomstringhere123!@#xyz 
 ```
 
 Press `Esc` → type `:wq` → press `Enter` to save.
@@ -378,3 +378,4 @@ cd ~/music-app
 git pull origin main
 sudo systemctl restart musicapp
 ```
+
