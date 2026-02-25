@@ -15,8 +15,16 @@ import uuid
 from dotenv import load_dotenv
 load_dotenv()
 
+
 app = Flask(__name__)
-CORS(app, origins="*", supports_credentials=True)
+
+# ─── CORS — allow only the Frontend Load Balancer ──────────────────────────────
+FRONTEND_URL = os.environ.get('FRONTEND_URL', '*')
+_origins = [FRONTEND_URL] if FRONTEND_URL != '*' else ['*']
+# also allow localhost for local dev
+_origins += ['http://localhost', 'http://127.0.0.1']
+CORS(app, origins=_origins, supports_credentials=True,
+     allow_headers=['Content-Type', 'Authorization'])
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-very-secret-key-change-me')
@@ -343,7 +351,7 @@ def forgot_password():
                 c.execute("UPDATE password_reset_tokens SET used=TRUE WHERE email=%s", (email,))
                 c.execute("INSERT INTO password_reset_tokens (email, token, expires_at) VALUES (%s,%s,%s)",
                           (email, reset_token, expires))
-                app_url    = os.environ.get('APP_URL', 'http://localhost')
+                app_url    = os.environ.get('APP_URL', '').rstrip('/')
                 reset_link = f"{app_url}/reset-password.html?token={reset_token}"
                 msg      = Message('Reset your MusicApp password', recipients=[email])
                 msg.html = f"""
@@ -575,5 +583,8 @@ def health():
 
 
 if __name__ == '__main__':
+    # Warn if APP_URL not set — password reset emails will have broken links
+    if not os.environ.get('APP_URL'):
+        print("WARNING: APP_URL is not set in .env — password reset links will be broken!")
     init_db()
     app.run(host='0.0.0.0', port=5000, debug=False)

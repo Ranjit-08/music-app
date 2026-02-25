@@ -5,23 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login — MusicApp</title>
   <link rel="stylesheet" href="shared.css" />
-  <style>
-    .step { display: none; }
-    .step.active { display: block; }
-    .back-btn {
-      background: none; border: none; color: var(--muted);
-      cursor: pointer; font-size: 13px; margin-bottom: 24px;
-      display: flex; align-items: center; gap: 6px;
-      font-family: var(--font-body);
-    }
-    .back-btn:hover { color: var(--text); }
-    .step-indicator { display: flex; gap: 8px; margin-bottom: 32px; }
-    .dot { height: 4px; border-radius: 4px; background: var(--border); flex: 1; transition: background 0.3s; }
-    .dot.active { background: var(--primary); }
-    .resend-timer { font-size: 13px; color: var(--muted); text-align: center; margin-top: 8px; }
-    .otp-hint { text-align: center; font-size: 13px; color: var(--muted); margin-top: 8px; }
-    .otp-hint a { color: var(--accent); cursor: pointer; }
-  </style>
 </head>
 <body>
 <div class="auth-wrapper">
@@ -42,11 +25,14 @@
 
       <div class="form-group">
         <label>Email</label>
-        <input type="email" id="email" placeholder="you@example.com" />
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" id="password" placeholder="Your password" />
+        <div class="password-wrap">
+          <input type="password" id="password" placeholder="Your password" autocomplete="current-password" />
+          <span class="toggle-pw" onclick="togglePw()">👁</span>
+        </div>
       </div>
 
       <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">
@@ -54,10 +40,10 @@
         <div class="spinner" id="loginSpinner"></div>
       </button>
 
-      <div class="link-row" style="margin-bottom:8px;">
+      <div class="link-row" style="margin-top:16px;">
         <a href="forgot-password.html" style="color:var(--muted);font-size:13px;">Forgot your password?</a>
       </div>
-      <div class="link-row">New here? <a href="signup.html">Create account</a></div>
+      <div class="link-row" style="margin-top:8px;">New here? <a href="signup.html">Create account</a></div>
     </div>
 
     <!-- STEP 2: OTP -->
@@ -70,12 +56,12 @@
       <div class="alert alert-success" id="suc2"></div>
 
       <div class="otp-group">
-        <input class="otp-digit" type="text" maxlength="1" oninput="otpInput(this,0)" onkeydown="otpKey(event,0)" />
-        <input class="otp-digit" type="text" maxlength="1" oninput="otpInput(this,1)" onkeydown="otpKey(event,1)" />
-        <input class="otp-digit" type="text" maxlength="1" oninput="otpInput(this,2)" onkeydown="otpKey(event,2)" />
-        <input class="otp-digit" type="text" maxlength="1" oninput="otpInput(this,3)" onkeydown="otpKey(event,3)" />
-        <input class="otp-digit" type="text" maxlength="1" oninput="otpInput(this,4)" onkeydown="otpKey(event,4)" />
-        <input class="otp-digit" type="text" maxlength="1" oninput="otpInput(this,5)" onkeydown="otpKey(event,5)" />
+        <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" oninput="otpInput(this,0)" onkeydown="otpKey(event,0)" />
+        <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" oninput="otpInput(this,1)" onkeydown="otpKey(event,1)" />
+        <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" oninput="otpInput(this,2)" onkeydown="otpKey(event,2)" />
+        <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" oninput="otpInput(this,3)" onkeydown="otpKey(event,3)" />
+        <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" oninput="otpInput(this,4)" onkeydown="otpKey(event,4)" />
+        <input class="otp-digit" type="text" inputmode="numeric" maxlength="1" oninput="otpInput(this,5)" onkeydown="otpKey(event,5)" />
       </div>
 
       <button class="btn btn-primary" id="verifyBtn" onclick="doVerify()">
@@ -97,16 +83,26 @@
   if (localStorage.getItem('token')) window.location.href = 'play.html';
 
   const otpDigits = document.querySelectorAll('.otp-digit');
-  let userEmail = '';
+  let userEmail   = '';
+
+  function togglePw() {
+    const input = document.getElementById('password');
+    const icon  = document.querySelector('.toggle-pw');
+    input.type  = input.type === 'password' ? 'text' : 'password';
+    icon.textContent = input.type === 'password' ? '👁' : '🙈';
+  }
 
   function otpInput(el, idx) {
+    el.classList.toggle('filled', !!el.value);
     if (el.value && idx < 5) otpDigits[idx + 1].focus();
     if (getOTP().length === 6) doVerify();
   }
 
   function otpKey(e, idx) {
-    if (e.key === 'Backspace' && !otpDigits[idx].value && idx > 0)
+    if (e.key === 'Backspace' && !otpDigits[idx].value && idx > 0) {
       otpDigits[idx - 1].focus();
+      otpDigits[idx - 1].classList.remove('filled');
+    }
   }
 
   function getOTP() { return [...otpDigits].map(d => d.value).join(''); }
@@ -114,22 +110,24 @@
   function showErr(id, msg) {
     const el = document.getElementById(id);
     el.textContent = msg; el.style.display = 'block';
+    el.style.animation = 'none';
+    requestAnimationFrame(() => el.style.animation = '');
   }
   function hideAll(ids) { ids.forEach(id => document.getElementById(id).style.display = 'none'); }
 
-  function setLoading(textId, spinnerId, btnId, loading) {
-    document.getElementById(textId).style.display = loading ? 'none' : 'inline';
-    document.getElementById(spinnerId).style.display = loading ? 'block' : 'none';
-    document.getElementById(btnId).disabled = loading;
+  function setLoading(textId, spinnerId, btnId, on) {
+    document.getElementById(textId).style.display    = on ? 'none' : 'inline';
+    document.getElementById(spinnerId).style.display = on ? 'block' : 'none';
+    document.getElementById(btnId).disabled          = on;
   }
 
   async function doLogin() {
-    hideAll(['err1', 'info1']);
+    hideAll(['err1','info1']);
     const email    = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     if (!email || !password) return showErr('err1', 'Please enter your email and password.');
 
-    setLoading('loginText', 'loginSpinner', 'loginBtn', true);
+    setLoading('loginText','loginSpinner','loginBtn', true);
     try {
       await api.post('/auth/login', { email, password }, false);
       userEmail = email;
@@ -141,15 +139,14 @@
       startTimer();
     } catch (e) {
       if (e.needs_verify) {
-        showErr('err1', '');
         const info = document.getElementById('info1');
         info.textContent = 'Your email is not verified. Please sign up again.';
         info.style.display = 'block';
       } else {
-        showErr('err1', e.error || 'Login failed.');
+        showErr('err1', e.error || 'Login failed. Please check your credentials.');
       }
     } finally {
-      setLoading('loginText', 'loginSpinner', 'loginBtn', false);
+      setLoading('loginText','loginSpinner','loginBtn', false);
     }
   }
 
@@ -158,18 +155,18 @@
     const code = getOTP();
     if (code.length !== 6) return;
 
-    setLoading('verifyText', 'verifySpinner', 'verifyBtn', true);
+    setLoading('verifyText','verifySpinner','verifyBtn', true);
     try {
       const data = await api.post('/auth/verify-login', { email: userEmail, code }, false);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       window.location.href = 'play.html';
     } catch (e) {
-      showErr('err2', e.error || 'Invalid code.');
-      otpDigits.forEach(d => d.value = '');
+      showErr('err2', e.error || 'Invalid or expired code.');
+      otpDigits.forEach(d => { d.value = ''; d.classList.remove('filled'); });
       otpDigits[0].focus();
     } finally {
-      setLoading('verifyText', 'verifySpinner', 'verifyBtn', false);
+      setLoading('verifyText','verifySpinner','verifyBtn', false);
     }
   }
 
@@ -177,13 +174,13 @@
   function startTimer() {
     let t = 60;
     document.getElementById('resendTimer').style.display = 'block';
-    document.getElementById('resendLink').style.display = 'none';
+    document.getElementById('resendLink').style.display  = 'none';
     timerInterval = setInterval(() => {
       document.getElementById('timer').textContent = --t;
       if (t <= 0) {
         clearInterval(timerInterval);
         document.getElementById('resendTimer').style.display = 'none';
-        document.getElementById('resendLink').style.display = 'block';
+        document.getElementById('resendLink').style.display  = 'block';
       }
     }, 1000);
   }
@@ -193,7 +190,7 @@
     const password = document.getElementById('password').value;
     try {
       await api.post('/auth/login', { email, password }, false);
-      otpDigits.forEach(d => d.value = '');
+      otpDigits.forEach(d => { d.value = ''; d.classList.remove('filled'); });
       otpDigits[0].focus();
       const s = document.getElementById('suc2');
       s.textContent = 'New code sent!'; s.style.display = 'block';
@@ -209,11 +206,8 @@
     clearInterval(timerInterval);
   }
 
-  // Submit on enter
   document.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      if (document.getElementById('step1').classList.contains('active')) doLogin();
-    }
+    if (e.key === 'Enter' && document.getElementById('step1').classList.contains('active')) doLogin();
   });
 </script>
 </body>
