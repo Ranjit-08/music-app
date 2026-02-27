@@ -231,8 +231,8 @@ exit;
 ---
 # Clone repo
 ---
-git clone https://github.com/YOUR_USERNAME/music-app.git
-cd music-app
+1. git clone https://github.com/YOUR_USERNAME/music-app.git
+2. cd music-app
 
 ---
 # Python environment
@@ -558,5 +558,6 @@ journalctl -u musicapp -f       # live backend logs
 systemctl status nginx
 tail -f /var/log/nginx/error.log
 ```
+
 
 
