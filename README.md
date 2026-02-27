@@ -237,11 +237,10 @@ cd music-app
 ---
 # Python environment
 ---
-
-python3 -m venv venv
-source venv/bin/activate
-pip install -r backend/requirements.txt
-pip install cryptography
+1. python3 -m venv venv
+2. source venv/bin/activate
+3. pip install -r backend/requirements.txt
+4. pip install cryptography
 ```
 
 ### Create .env file
@@ -559,4 +558,5 @@ journalctl -u musicapp -f       # live backend logs
 systemctl status nginx
 tail -f /var/log/nginx/error.log
 ```
+
 
