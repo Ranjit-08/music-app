@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ListenMe — Your Music, Your World</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #06060f;
+      --card:    #11111e;
+      --border:  #1c1c30;
+      --primary: #7c3aed;
+      --accent:  #a78bfa;
+      --pink:    #ec4899;
+      --text:    #e2e8f0;
+      --muted:   #475569;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ── ANIMATED BG ─────────────────────────────────────── */
+    .bg-layer {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 60% at 10% 5%,  rgba(124,58,237,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 90% 90%, rgba(236,72,153,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 35% at 60% 40%, rgba(124,58,237,0.07) 0%, transparent 50%),
+        var(--bg);
+      animation: bgPulse 10s ease-in-out infinite alternate;
+    }
+    @keyframes bgPulse {
+      0%   { opacity: 1;    transform: scale(1);    }
+      100% { opacity: 0.75; transform: scale(1.03); }
+    }
+
+    /* ── NAVBAR ──────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(6,6,15,0.7);
+      backdrop-filter: blur(28px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      animation: navSlide 0.6s ease both;
+    }
+    @keyframes navSlide {
+      from { transform: translateY(-80px); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px; font-weight: 900;
+      color: var(--text); text-decoration: none;
+      display: flex; align-items: center; gap: 10px;
+      letter-spacing: -0.3px;
+    }
+    .nav-logo-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--pink));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-actions { display: flex; gap: 10px; align-items: center; }
+    .nav-btn {
+      padding: 8px 22px; border-radius: 50px; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: all 0.25s; border: none;
+    }
+    .nav-btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .nav-btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+    .nav-btn-primary {
+      background: linear-gradient(135deg, var(--primary), #6d28d9);
+      color: #fff; box-shadow: 0 4px 20px rgba(124,58,237,0.35);
+    }
+    .nav-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,58,237,0.45); }
+
+    /* ── FLOATING CARDS STAGE ────────────────────────────── */
+    .cards-stage {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
+    }
+
+    .float-card {
+      position: absolute;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      animation: floatDrift linear infinite;
+      opacity: 0;
+      will-change: transform;
+    }
+    .float-card.type-cover {
+      width: 90px; height: 90px;
+      border-radius: 14px;
+    }
+    .float-card.type-wide {
+      width: 160px; height: 56px;
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .float-card.type-artist {
+      width: 76px; height: 76px;
+      border-radius: 50%;
+    }
+
+    .float-card img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .float-card.type-wide img {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+    }
+    .float-card.type-wide .fc-info { flex: 1; min-width: 0; }
+    .float-card.type-wide .fc-title {
+      font-size: 11px; font-weight: 700; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; color: #e2e8f0;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .float-card.type-wide .fc-artist {
+      font-size: 10px; color: #64748b; margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .float-card.type-wide .fc-icon {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--primary); display: flex; align-items: center;
+      justify-content: center; font-size: 9px; flex-shrink: 0; color: #fff;
+    }
+
+    /* Each card gets a unique drift path */
+    @keyframes floatDrift {
+      0%   { opacity: 0;    transform: translateY(0px)   rotate(var(--rot-start)) scale(0.9); }
+      5%   { opacity: var(--max-opacity); }
+      92%  { opacity: var(--max-opacity); }
+      100% { opacity: 0;    transform: translateY(var(--drift-y)) rotate(var(--rot-end)) scale(1.05); }
+    }
+
+    /* ── HERO ────────────────────────────────────────────── */
+    .hero {
+      position: relative; z-index: 10;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 120px 24px 80px;
+    }
+
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 18px; border-radius: 50px;
+      background: rgba(124,58,237,0.12);
+      border: 1px solid rgba(124,58,237,0.3);
+      color: var(--accent); font-size: 13px; font-weight: 600;
+      margin-bottom: 28px;
+      animation: heroFadeUp 0.7s 0.1s ease both;
+    }
+    .hero-tag .pulse {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent);
+      animation: pulseGlow 2s ease infinite;
+    }
+    @keyframes pulseGlow {
+      0%,100% { box-shadow: 0 0 0 0 rgba(167,139,250,0.4); }
+      50%     { box-shadow: 0 0 0 5px rgba(167,139,250,0); }
+    }
+
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(48px, 8vw, 96px);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -2px;
+      margin-bottom: 6px;
+      animation: heroFadeUp 0.7s 0.2s ease both;
+    }
+    .hero-title .line2 {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--pink) 60%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+    }
+
+    .hero-sub {
+      font-size: clamp(15px, 2vw, 19px);
+      color: #64748b; max-width: 520px;
+      line-height: 1.65; margin: 20px auto 48px;
+      animation: heroFadeUp 0.7s 0.3s ease both;
+    }
+
+    .hero-ctas {
+      display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+      animation: heroFadeUp 0.7s 0.4s ease both;
+    }
+    .cta-main {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 18px 42px; border-radius: 50px;
+      background: linear-gradient(135deg, var(--primary), #6d28d9);
+      color: #fff; font-family: 'DM Sans', sans-serif;
+      font-size: 16px; font-weight: 700; text-decoration: none;
+      box-shadow: 0 6px 32px rgba(124,58,237,0.45);
+      transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+      position: relative; overflow: hidden;
+    }
+    .cta-main::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .cta-main:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 12px 48px rgba(124,58,237,0.55);
+    }
+    .cta-main:hover::before { opacity: 1; }
+    .cta-main .cta-icon {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+
+    .cta-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 17px 36px; border-radius: 50px;
+      background: transparent; color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px; font-weight: 600; text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.12);
+      transition: all 0.25s;
+    }
+    .cta-secondary:hover {
+      border-color: rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.04);
+      transform: translateY(-2px);
+    }
+
+    /* ── SCROLL INDICATOR ────────────────────────────────── */
+    .scroll-hint {
+      position: absolute; bottom: 32px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      color: var(--muted); font-size: 12px;
+      animation: heroFadeUp 1s 1s ease both;
+    }
+    .scroll-arrow {
+      width: 24px; height: 40px; border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 12px; display: flex; justify-content: center;
+      padding-top: 7px;
+    }
+    .scroll-dot {
+      width: 4px; height: 8px; border-radius: 2px;
+      background: var(--accent);
+      animation: scrollBounce 2s ease infinite;
+    }
+    @keyframes scrollBounce {
+      0%,100% { transform: translateY(0);   opacity: 1;   }
+      50%     { transform: translateY(12px); opacity: 0.3; }
+    }
+
+    @keyframes heroFadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* ── FEATURES SECTION ────────────────────────────────── */
+    .features {
+      position: relative; z-index: 10;
+      padding: 100px 48px;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .features-tag {
+      text-align: center; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--accent); margin-bottom: 16px;
+    }
+    .features-title {
+      text-align: center;
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 800; margin-bottom: 60px;
+      letter-spacing: -1px;
+    }
+    .features-title span {
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+    @media (max-width: 768px) { .features-grid { grid-template-columns: 1fr; } }
+    .feature-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 32px;
+      transition: all 0.3s;
+      opacity: 0; transform: translateY(30px);
+    }
+    .feature-card.visible {
+      opacity: 1; transform: translateY(0);
+      transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.3s, box-shadow 0.3s;
+    }
+    .feature-card:hover {
+      border-color: rgba(124,58,237,0.35);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(124,58,237,0.12);
+    }
+    .feature-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin-bottom: 20px;
+    }
+    .feature-icon.purple { background: rgba(124,58,237,0.15); }
+    .feature-icon.pink   { background: rgba(236,72,153,0.15); }
+    .feature-icon.blue   { background: rgba(59,130,246,0.15); }
+    .feature-icon.green  { background: rgba(34,197,94,0.15);  }
+    .feature-icon.orange { background: rgba(249,115,22,0.15); }
+    .feature-icon.cyan   { background: rgba(6,182,212,0.15);  }
+    .feature-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .feature-desc  { font-size: 14px; color: #64748b; line-height: 1.7; }
+
+    /* ── BOTTOM CTA ──────────────────────────────────────── */
+    .bottom-cta {
+      position: relative; z-index: 10;
+      padding: 80px 48px;
+      text-align: center;
+    }
+    .bottom-cta-box {
+      max-width: 680px; margin: 0 auto;
+      background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(236,72,153,0.08));
+      border: 1px solid rgba(124,58,237,0.25);
+      border-radius: 28px; padding: 60px 48px;
+      position: relative; overflow: hidden;
+    }
+    .bottom-cta-box::before {
+      content: '';
+      position: absolute; top: -1px; left: 10%; right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(124,58,237,0.7), rgba(236,72,153,0.5), transparent);
+    }
+    .bottom-cta-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(26px, 4vw, 40px);
+      font-weight: 900; margin-bottom: 14px; letter-spacing: -0.5px;
+    }
+    .bottom-cta-sub { color: #64748b; font-size: 16px; margin-bottom: 36px; }
+    .bottom-cta-btn {
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 18px 48px; border-radius: 50px;
+      background: linear-gradient(135deg, var(--primary), var(--pink));
+      color: #fff; font-family: 'DM Sans', sans-serif;
+      font-size: 17px; font-weight: 700; text-decoration: none;
+      box-shadow: 0 6px 40px rgba(124,58,237,0.4);
+      transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    .bottom-cta-btn:hover {
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 12px 56px rgba(124,58,237,0.5);
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    footer {
+      position: relative; z-index: 10;
+      padding: 32px 48px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      color: var(--muted); font-size: 13px;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    /* ── TICKER ──────────────────────────────────────────── */
+    .ticker-wrap {
+      position: relative; z-index: 10;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0; overflow: hidden;
+      background: rgba(17,17,30,0.8);
+      margin-bottom: 0;
+    }
+    .ticker {
+      display: flex; gap: 32px;
+      animation: tickerScroll 30s linear infinite;
+      width: max-content;
+    }
+    .ticker:hover { animation-play-state: paused; }
+    @keyframes tickerScroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .ticker-item {
+      display: flex; align-items: center; gap: 10px;
+      white-space: nowrap; color: var(--muted); font-size: 13px; font-weight: 500;
+    }
+    .ticker-item .dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent);
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 14px 20px; }
+      .hero { padding: 100px 20px 60px; }
+      .features { padding: 60px 20px; }
+      .bottom-cta { padding: 60px 20px; }
+      .bottom-cta-box { padding: 40px 24px; }
+      footer { flex-direction: column; gap: 10px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Animated background -->
+<div class="bg-layer"></div>
+
+<!-- Floating Cards Stage -->
+<div class="cards-stage" id="cardsStage"></div>
+
+<!-- Navbar -->
+<nav>
+  <a class="nav-logo" href="index.html">
+    <div class="nav-logo-icon">🎧</div>
+    Listen<span>Me</span>
+  </a>
+  <div class="nav-actions">
+    <a href="login.html"  class="nav-btn nav-btn-ghost">Sign In</a>
+    <a href="signup.html" class="nav-btn nav-btn-primary">Get Started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">
+    <span class="pulse"></span>
+    Your personal music streaming space
+  </div>
+
+  <h1 class="hero-title">
+    Music that moves<br/>
+    <span class="line2">your soul</span>
+  </h1>
+
+  <p class="hero-sub">
+    Stream every track in the library, discover new artists, build your favourites list, and lose yourself in the music — anytime, anywhere.
+  </p>
+
+  <div class="hero-ctas">
+    <a href="login.html" class="cta-main">
+      <span class="cta-icon">🎧</span>
+      Start Listening
+    </a>
+    <a href="signup.html" class="cta-secondary">
+      Create free account →
+    </a>
+  </div>
+
+  <div class="scroll-hint">
+    <div class="scroll-arrow"><div class="scroll-dot"></div></div>
+    <span>Scroll to explore</span>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker" id="ticker"></div>
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="features-tag">Why ListenMe</div>
+  <h2 class="features-title">Everything you need to <span>enjoy music</span></h2>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon purple">🎵</div>
+      <div class="feature-title">Curated Library</div>
+      <div class="feature-desc">Every track is hand-picked and uploaded by our admin team — no clutter, just great music.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon pink">❤️</div>
+      <div class="feature-title">Personal Favourites</div>
+      <div class="feature-desc">Heart your favourite songs. Build your personal collection that's always waiting for you when you return.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon blue">🎤</div>
+      <div class="feature-title">Browse by Artist</div>
+      <div class="feature-desc">Explore the full discography of every artist. All songs grouped neatly so you never lose a track.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon green">🔀</div>
+      <div class="feature-title">Shuffle & Loop</div>
+      <div class="feature-desc">Shuffle the whole library or loop your favourite track endlessly. You control your listening experience.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon orange">🔒</div>
+      <div class="feature-title">Secure & Private</div>
+      <div class="feature-desc">Your account is protected. No ads, no tracking — just you and the music you love.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon cyan">🌐</div>
+      <div class="feature-title">Stream Anywhere</div>
+      <div class="feature-desc">High-quality streaming delivered fast from cloud storage. Works on any browser, any device.</div>
+    </div>
+  </div>
+</section>
+
+<!-- BOTTOM CTA -->
+<section class="bottom-cta">
+  <div class="bottom-cta-box">
+    <div class="bottom-cta-title">Ready to start listening?</div>
+    <div class="bottom-cta-sub">Join ListenMe today — it's completely free.</div>
+    <a href="login.html" class="bottom-cta-btn">
+      🎧 Listen Songs Now
+    </a>
+    <div style="margin-top:20px;font-size:13px;color:#475569;">
+      Already have an account? <a href="login.html" style="color:#a78bfa;text-decoration:none;font-weight:600;">Sign in →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <a href="index.html" style="font-weight:700;font-family:'Syne',sans-serif;">🎧 ListenMe</a>
+    &nbsp;· Your music, your world.
+  </div>
+  <div>
+    <a href="signup.html">Sign Up</a>
+    &nbsp;·&nbsp;
+    <a href="login.html">Sign In</a>
+  </div>
+</footer>
+
+<script>
+// ── Data for floating cards ────────────────────────────────────────────────────
+const ARTISTS = [
+  { name:'The Weeknd',     emoji:'🎤', color:'#7c3aed' },
+  { name:'Billie Eilish',  emoji:'🎸', color:'#ec4899' },
+  { name:'Drake',          emoji:'🎵', color:'#3b82f6' },
+  { name:'Ariana Grande',  emoji:'🎶', color:'#f472b6' },
+  { name:'Bad Bunny',      emoji:'🎧', color:'#8b5cf6' },
+  { name:'Taylor Swift',   emoji:'🎹', color:'#a78bfa' },
+  { name:'Post Malone',    emoji:'🎺', color:'#06b6d4' },
+  { name:'Doja Cat',       emoji:'🎻', color:'#ec4899' },
+  { name:'SZA',            emoji:'🥁', color:'#22c55e' },
+  { name:'Travis Scott',   emoji:'🎤', color:'#f97316' },
+];
+
+const SONGS = [
+  { title:'Blinding Lights',  artist:'The Weeknd',    emoji:'🌃' },
+  { title:'Happier Than Ever',artist:'Billie Eilish', emoji:'🌊' },
+  { title:'God\'s Plan',       artist:'Drake',          emoji:'☁️' },
+  { title:'positions',        artist:'Ariana Grande', emoji:'💫' },
+  { title:'Motomami',         artist:'Rosalía',        emoji:'🌹' },
+  { title:'Anti-Hero',        artist:'Taylor Swift',  emoji:'🎭' },
+  { title:'Sunflower',        artist:'Post Malone',   emoji:'🌻' },
+  { title:'Woman',            artist:'Doja Cat',      emoji:'🐱' },
+  { title:'Kill Bill',        artist:'SZA',            emoji:'🌸' },
+  { title:'SICKO MODE',       artist:'Travis Scott',  emoji:'🌀' },
+  { title:'Save Your Tears',  artist:'The Weeknd',    emoji:'💧' },
+  { title:'lovely',           artist:'Billie Eilish', emoji:'🖤' },
+];
+
+// ── Spawn floating cards ──────────────────────────────────────────────────────
+const stage = document.getElementById('cardsStage');
+
+function spawnCard() {
+  const card = document.createElement('div');
+  const roll = Math.random();
+  const isMobile = window.innerWidth < 600;
+
+  // Pick side: left zone or right zone (avoid center 40%)
+  const side   = Math.random() < 0.5 ? 'left' : 'right';
+  const xRange = side === 'left' ? [2, 28] : [72, 97];
+  const x      = xRange[0] + Math.random() * (xRange[1] - xRange[0]);
+  const y      = 20 + Math.random() * 65; // vertical start %
+
+  const driftY      = -(180 + Math.random() * 280) + 'px';
+  const driftX      = (Math.random() - 0.5) * 60 + 'px';
+  const rotStart    = (Math.random() - 0.5) * 16 + 'deg';
+  const rotEnd      = (Math.random() - 0.5) * 24 + 'deg';
+  const duration    = 18 + Math.random() * 22;
+  const delay       = Math.random() * 20;
+  const maxOpacity  = 0.28 + Math.random() * 0.35;
+
+  card.style.setProperty('--drift-y',      driftY);
+  card.style.setProperty('--rot-start',    rotStart);
+  card.style.setProperty('--rot-end',      rotEnd);
+  card.style.setProperty('--max-opacity',  maxOpacity);
+
+  card.style.left              = x + 'vw';
+  card.style.top               = y + 'vh';
+  card.style.animationDuration = duration + 's';
+  card.style.animationDelay    = delay + 's';
+
+  if (roll < 0.45) {
+    // Album cover style
+    card.className = 'float-card type-cover';
+    const song = SONGS[Math.floor(Math.random() * SONGS.length)];
+    card.innerHTML = `
+      <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+           font-size:38px;background:linear-gradient(135deg,#1a1a30,#0d0d1a);">${song.emoji}</div>`;
+  } else if (roll < 0.75) {
+    // Artist avatar style
+    card.className = 'float-card type-artist';
+    const art = ARTISTS[Math.floor(Math.random() * ARTISTS.length)];
+    const letters = art.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+    card.innerHTML = `
+      <div style="width:100%;height:100%;border-radius:50%;display:flex;align-items:center;
+           justify-content:center;font-size:28px;font-weight:900;color:#fff;
+           font-family:'Syne',sans-serif;
+           background:linear-gradient(135deg,${art.color},${art.color}99);">
+        ${letters}
+      </div>`;
+  } else {
+    // Now-playing row style
+    card.className = 'float-card type-wide';
+    const song = SONGS[Math.floor(Math.random() * SONGS.length)];
+    card.innerHTML = `
+      <div style="width:36px;height:36px;border-radius:8px;flex-shrink:0;overflow:hidden;
+           display:flex;align-items:center;justify-content:center;font-size:20px;
+           background:linear-gradient(135deg,#1e1e3a,#0d0d1a);">${song.emoji}</div>
+      <div class="fc-info">
+        <div class="fc-title">${song.title}</div>
+        <div class="fc-artist">${song.artist}</div>
+      </div>
+      <div class="fc-icon">▶</div>`;
+  }
+
+  stage.appendChild(card);
+
+  // Remove after animation ends + delay
+  setTimeout(() => {
+    if (card.parentNode) card.parentNode.removeChild(card);
+  }, (duration + delay + 2) * 1000);
+}
+
+// Spawn cards continuously
+function spawnBatch() {
+  const count = window.innerWidth < 600 ? 12 : 22;
+  for (let i = 0; i < count; i++) spawnCard();
+}
+
+spawnBatch();
+setInterval(spawnBatch, 24000);
+
+// ── Ticker ────────────────────────────────────────────────────────────────────
+const tickerItems = [
+  ...SONGS.map(s => `${s.emoji} ${s.title} — ${s.artist}`),
+  '🎧 Stream anytime',
+  '❤️ Save favourites',
+  '🔀 Shuffle mode',
+  '🎤 Browse artists',
+  '🔒 Secure & private',
+];
+const ticker = document.getElementById('ticker');
+// Duplicate for seamless loop
+const doubled = [...tickerItems, ...tickerItems];
+ticker.innerHTML = doubled.map(t => `
+  <div class="ticker-item"><span class="dot"></span>${t}</div>
+`).join('');
+
+// ── Scroll-reveal for feature cards ──────────────────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      const cards = document.querySelectorAll('.feature-card');
+      cards.forEach((card, idx) => {
+        setTimeout(() => card.classList.add('visible'), idx * 100);
+      });
+      observer.disconnect();
+    }
+  });
+}, { threshold: 0.15 });
+
+observer.observe(document.querySelector('.features-grid'));
+
+// ── Redirect if already logged in ────────────────────────────────────────────
+if (localStorage.getItem('token')) {
+  document.querySelector('.cta-main').href   = 'play.html';
+  document.querySelector('.bottom-cta-btn').href = 'play.html';
+  document.querySelector('.nav-btn-primary').href = 'play.html';
+  document.querySelector('.nav-btn-primary').textContent = 'Open App';
+}
+</script>
+</body>
+</html>

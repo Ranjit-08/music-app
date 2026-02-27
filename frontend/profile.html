@@ -3,119 +3,124 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Profile — MusicApp</title>
+  <title>Profile — ListenMe</title>
   <link rel="stylesheet" href="shared.css" />
   <style>
     .profile-hero {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 40px;
-      display: flex;
-      align-items: center;
-      gap: 32px;
-      margin-bottom: 40px;
-      background: linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(14,14,22,1) 100%);
+      background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(14,14,22,0.98));
+      border: 1px solid var(--border); border-radius: 20px;
+      padding: 40px; display: flex; align-items: center; gap: 32px;
+      margin-bottom: 40px; overflow: hidden; position: relative;
+      animation: fadeInUp 0.5s ease both;
+    }
+    .profile-hero::before {
+      content:''; position:absolute; top:-40px; right:-40px;
+      width:200px; height:200px; border-radius:50%;
+      background:radial-gradient(circle,rgba(124,58,237,0.15),transparent);
+      pointer-events:none;
     }
     .avatar {
-      width: 90px; height: 90px;
-      border-radius: 50%;
+      width: 88px; height: 88px; border-radius: 50%;
       background: linear-gradient(135deg, var(--primary), var(--pink));
       display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-display);
-      font-size: 36px;
-      font-weight: 800;
-      flex-shrink: 0;
-      box-shadow: 0 8px 30px rgba(124,58,237,0.35);
+      font-family: var(--font-display); font-size: 34px; font-weight: 900;
+      color: #fff; flex-shrink: 0;
+      box-shadow: 0 8px 32px rgba(124,58,237,0.4);
+      animation: avatarPop 0.6s cubic-bezier(0.16,1,0.3,1) both;
     }
-    .profile-name {
-      font-family: var(--font-display);
-      font-size: 32px; font-weight: 800; margin-bottom: 6px;
+    @keyframes avatarPop {
+      from { transform: scale(0.6) rotate(-10deg); opacity: 0; }
+      to   { transform: scale(1)   rotate(0deg);   opacity: 1; }
     }
-    .profile-email { color: var(--muted); font-size: 15px; margin-bottom: 16px; }
-    .profile-meta { display: flex; gap: 24px; }
+    .profile-name { font-family: var(--font-display); font-size: 30px; font-weight: 800; margin-bottom: 4px; }
+    .profile-email { color: var(--text-2); font-size: 14px; margin-bottom: 18px; }
+    .profile-stats { display: flex; gap: 28px; flex-wrap: wrap; }
     .stat { text-align: center; }
-    .stat-num { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--accent); }
-    .stat-lbl { color: var(--muted); font-size: 13px; }
+    .stat-num { font-family: var(--font-display); font-size: 26px; font-weight: 800; color: var(--accent); }
+    .stat-lbl { color: var(--muted); font-size: 12px; margin-top: 2px; }
 
-    .section-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+    .section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .section-title { font-family: var(--font-display); font-size: 22px; font-weight: 800; }
+
+    .tabs { display: flex; gap: 6px; margin-bottom: 24px; }
+    .tab {
+      padding: 8px 20px; border-radius: 50px; border: 1px solid var(--border);
+      background: var(--card); color: var(--muted); font-size: 14px;
+      font-weight: 500; cursor: pointer; transition: all 0.2s;
+      font-family: var(--font-body);
+    }
+    .tab:hover { border-color: var(--border-hover); color: var(--text); }
+    .tab.active { background: rgba(124,58,237,0.12); border-color: var(--primary); color: var(--accent); }
 
     .song-row {
-      display: flex; align-items: center; gap: 14px;
-      padding: 14px 18px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      margin-bottom: 10px;
-      cursor: pointer;
-      transition: border-color 0.2s;
+      display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer;
+      transition: all 0.2s; animation: fadeInUp 0.3s ease both;
     }
-    .song-row:hover { border-color: rgba(124,58,237,0.5); }
+    .song-row:hover { border-color: rgba(124,58,237,0.4); transform: translateX(3px); }
 
     .song-thumb {
-      width: 48px; height: 48px;
-      border-radius: 8px;
-      background: var(--surface);
-      flex-shrink: 0;
-      overflow: hidden;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px;
+      width: 46px; height: 46px; border-radius: 8px; background: var(--surface);
+      flex-shrink: 0; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
     }
-    .song-thumb img { width: 100%; height: 100%; object-fit: cover; }
-
+    .song-thumb img { width:100%; height:100%; object-fit:cover; }
     .song-info { flex: 1; min-width: 0; }
-    .song-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .song-meta  { color: var(--muted); font-size: 13px; }
-
+    .song-title { font-weight: 700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .song-meta  { color: var(--text-2); font-size: 13px; }
     .genre-tag {
-      padding: 3px 12px;
-      background: rgba(124,58,237,0.12);
-      color: var(--accent);
-      border-radius: 50px;
-      font-size: 12px;
-      white-space: nowrap;
+      padding: 3px 12px; border-radius: 50px;
+      background: rgba(124,58,237,0.1); color: var(--accent);
+      font-size: 11px; font-weight: 600; white-space: nowrap; flex-shrink: 0;
     }
 
     .danger-zone {
-      margin-top: 48px;
-      padding: 24px;
-      border: 1px solid rgba(239,68,68,0.2);
-      border-radius: var(--radius);
+      margin-top: 48px; padding: 24px;
+      border: 1px solid rgba(239,68,68,0.2); border-radius: var(--radius);
       background: rgba(239,68,68,0.03);
     }
-    .danger-title { color: var(--danger); font-weight: 600; margin-bottom: 8px; }
+    .danger-title { color: var(--danger); font-weight: 700; margin-bottom: 6px; }
     .danger-desc  { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
 
-    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-state { text-align:center; padding:60px 20px; color:var(--muted); }
+    .empty-state .icon { font-size:48px; margin-bottom:14px; opacity:0.6; }
   </style>
 </head>
 <body>
 
 <nav class="navbar">
-  <a class="logo" href="play.html">🎵 Music<span>App</span></a>
-  <div class="nav-links">
-    <a href="play.html">🎧 Play</a>
-    <a href="upload.html">⬆️ Upload</a>
-    <a href="profile.html" class="active">👤 Profile</a>
+  <a class="logo" href="play.html">
+    <div class="logo-icon">🎧</div>Listen<span>Me</span>
+  </a>
+  <div class="nav-links" id="navLinks">
+    <a href="play.html">Discover</a>
+    <a href="profile.html" class="active">Profile</a>
   </div>
-  <button class="btn-logout" onclick="logout()">Sign Out</button>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span id="adminBadge" class="admin-badge" style="display:none;">⚡ Admin</span>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
 </nav>
 
 <div class="page-container">
-
-  <!-- Profile Hero -->
+  <!-- Hero -->
   <div class="profile-hero" id="profileHero">
-    <div style="color:var(--muted);">Loading profile...</div>
+    <div style="color:var(--muted);">Loading…</div>
   </div>
 
-  <!-- My Songs -->
-  <div class="section-title">My Uploads</div>
-  <div id="mySongsList"></div>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('favorites',this)">❤️ Favorites</button>
+    <button class="tab" onclick="switchTab('recent',this)">🕐 Recent</button>
+  </div>
 
-  <!-- Danger Zone -->
+  <div id="tabContent"></div>
+
+  <!-- Danger zone -->
   <div class="danger-zone">
     <div class="danger-title">⚠️ Sign Out</div>
-    <div class="danger-desc">This will sign you out of your account on this device.</div>
+    <div class="danger-desc">Signs you out of your ListenMe account on this device.</div>
     <button class="btn btn-danger" onclick="logout()" style="font-size:14px;padding:10px 24px;">Sign Out</button>
   </div>
 </div>
@@ -124,117 +129,118 @@
 
 <script src="config.js"></script>
 <script>
-  requireAuth();
+requireAuth();
 
-  function escHtml(s) {
-    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-  function formatBytes(b) {
-    if (!b) return '—';
-    if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
-    return (b/(1024*1024)).toFixed(1) + ' MB';
-  }
-  function formatDate(iso) {
-    if (!iso) return '';
-    return new Date(iso).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
-  }
+const audio = document.getElementById('audioEl');
+let favSongs    = [];
+let recentSongs = [];
+let currentTab  = 'favorites';
 
-  async function loadProfile() {
-    try {
-      const { user } = await api.get('/auth/me');
-      const initials = user.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-      document.getElementById('profileHero').innerHTML = `
-        <div class="avatar">${initials}</div>
-        <div>
-          <div class="profile-name">${escHtml(user.name)}</div>
-          <div class="profile-email">${escHtml(user.email)}</div>
-          <div class="profile-meta">
-            <div class="stat">
-              <div class="stat-num" id="songCount">—</div>
-              <div class="stat-lbl">Songs</div>
-            </div>
-            <div class="stat">
-              <div class="stat-num">${formatDate(user.created_at).split(' ')[0]}</div>
-              <div class="stat-lbl">Member since ${formatDate(user.created_at)}</div>
-            </div>
+async function loadProfile() {
+  try {
+    const { user } = await api.get('/auth/me');
+    const inits    = user.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+
+    if (user.is_admin) {
+      document.getElementById('adminBadge').style.display = 'inline-flex';
+      const navLinks = document.getElementById('navLinks');
+      const uploadLink = document.createElement('a');
+      uploadLink.href = 'upload.html'; uploadLink.textContent = 'Upload';
+      navLinks.insertBefore(uploadLink, navLinks.children[1]);
+    }
+
+    document.getElementById('profileHero').innerHTML = `
+      <div class="avatar">${inits}</div>
+      <div>
+        <div class="profile-name">${esc(user.name)}</div>
+        <div class="profile-email">${esc(user.email)}</div>
+        ${user.is_admin ? '<div class="admin-badge" style="margin-bottom:14px;">⚡ Admin</div>' : ''}
+        <div class="profile-stats">
+          <div class="stat">
+            <div class="stat-num" id="favCount">—</div>
+            <div class="stat-lbl">Favourites</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">${formatDate(user.created_at)}</div>
+            <div class="stat-lbl">Member since</div>
           </div>
         </div>
-      `;
-    } catch (e) {
-      document.getElementById('profileHero').innerHTML = '<div style="color:var(--danger);">Failed to load profile.</div>';
-    }
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('profileHero').innerHTML = '<div style="color:var(--danger);">Failed to load profile.</div>';
   }
+}
 
-  const audio = document.getElementById('audioEl');
-  let currentPlaying = null;
+async function loadFavorites() {
+  try {
+    const data = await api.get('/songs/favorites');
+    favSongs   = data.songs;
+    document.getElementById('favCount').textContent = favSongs.length;
+    if (currentTab === 'favorites') renderSongs(favSongs, true);
+  } catch(e) { /* silent */ }
+}
 
-  function playSong(song) {
-    if (currentPlaying === song.id && !audio.paused) {
-      audio.pause();
-      currentPlaying = null;
-      return;
-    }
-    audio.src = song.audio_url;
-    audio.play();
-    currentPlaying = song.id;
+async function loadRecent() {
+  try {
+    const data = await api.get('/songs');
+    recentSongs = data.songs.slice(0, 20);
+    if (currentTab === 'recent') renderSongs(recentSongs, false);
+  } catch(e) { /* silent */ }
+}
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if (tab === 'favorites') renderSongs(favSongs, true);
+  else renderSongs(recentSongs, false);
+}
+
+function renderSongs(songs, showRemove) {
+  const container = document.getElementById('tabContent');
+  if (!songs.length) {
+    const icon = showRemove ? '❤️' : '🎵';
+    const msg  = showRemove ? "You haven't favourited any songs yet." : "No songs in library yet.";
+    container.innerHTML = `<div class="empty-state"><div class="icon">${icon}</div><div>${msg}</div><a href="play.html" class="btn btn-primary" style="display:inline-flex;width:auto;margin-top:20px;">Go to Library</a></div>`;
+    return;
   }
+  container.innerHTML = songs.map((s, i) => `
+    <div class="song-row" style="animation-delay:${i*0.04}s" onclick="playSong('${escJs(s.audio_url)}')">
+      <div class="song-thumb">${s.cover_url ? `<img src="${esc(s.cover_url)}" />` : '🎵'}</div>
+      <div class="song-info">
+        <div class="song-title">${esc(s.title)}</div>
+        <div class="song-meta">${esc(s.artist)}${s.album ? ' · ' + esc(s.album) : ''}</div>
+      </div>
+      ${s.genre ? `<span class="genre-tag">${esc(s.genre)}</span>` : ''}
+      ${showRemove
+        ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();removeFav(${s.id})">♡ Remove</button>`
+        : ''}
+    </div>
+  `).join('');
+}
 
-  async function loadMySongs() {
-    const container = document.getElementById('mySongsList');
-    container.innerHTML = '<div style="color:var(--muted);padding:20px;">Loading...</div>';
-    try {
-      const data = await api.get('/songs/my');
-      document.getElementById('songCount').textContent = data.songs.length;
+function playSong(url) {
+  audio.src = url; audio.play();
+}
 
-      if (!data.songs.length) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div style="font-size:48px;margin-bottom:16px;">🎵</div>
-            <div>You haven't uploaded any songs yet.</div>
-            <a href="upload.html" class="btn btn-primary" style="display:inline-flex;margin-top:20px;width:auto;">Upload Now</a>
-          </div>`;
-        return;
-      }
+async function removeFav(id) {
+  try {
+    await api.del(`/songs/${id}/favorite`);
+    await loadFavorites();
+  } catch(e) { alert(e.error || 'Failed to remove.'); }
+}
 
-      container.innerHTML = data.songs.map(s => `
-        <div class="song-row" onclick="playSong(${JSON.stringify(s).replace(/"/g,'&quot;')})">
-          <div class="song-thumb">
-            ${s.cover_url ? `<img src="${escHtml(s.cover_url)}" alt="" />` : '🎵'}
-          </div>
-          <div class="song-info">
-            <div class="song-title">${escHtml(s.title)}</div>
-            <div class="song-meta">${escHtml(s.artist)}${s.album ? ' · ' + escHtml(s.album) : ''} · ${formatDate(s.uploaded_at)}</div>
-          </div>
-          ${s.genre ? `<span class="genre-tag">${escHtml(s.genre)}</span>` : ''}
-          <div style="color:var(--muted);font-size:12px;min-width:65px;text-align:right;">${formatBytes(s.file_size)}</div>
-          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteSong(${s.id})">🗑</button>
-        </div>
-      `).join('');
-    } catch (e) {
-      container.innerHTML = '<div style="color:var(--danger);">Failed to load songs.</div>';
-    }
-  }
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', { year:'numeric', month:'short' });
+}
+function esc(s)   { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escJs(s) { return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
-  async function deleteSong(id) {
-    if (!confirm('Delete this song permanently?')) return;
-    try {
-      await api.del(`/songs/${id}`);
-      loadMySongs();
-    } catch (e) {
-      alert(e.error || 'Failed to delete.');
-    }
-  }
-
-  // Make playSong work with onclick (song object from data attribute)
-  window.playSong = function(song) {
-    if (typeof song === 'object') {
-      audio.src = song.audio_url;
-      audio.play();
-    }
-  };
-
-  loadProfile();
-  loadMySongs();
+loadProfile();
+loadFavorites();
+loadRecent();
 </script>
 </body>
 </html>

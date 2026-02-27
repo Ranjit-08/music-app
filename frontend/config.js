@@ -1,12 +1,6 @@
-// config.js — MusicApp
-// In 2-server private setup:
-//   API_BASE points to the PUBLIC Frontend ALB
-//   Frontend Nginx proxies /api/ → Internal Backend ALB → Backend EC2
-// In single-server setup:
-//   API_BASE points to your EC2 Public IP
-
+// config.js — ListenMe
+// Set this to your Frontend Public ALB DNS (or EC2 IP for single-server)
 const API_BASE = 'http://FRONTEND-PUBLIC-ALB-DNS/api';
-// Example: 'http://musicapp-frontend-alb-123.us-east-1.elb.amazonaws.com/api'
 
 const api = {
   async request(method, path, body = null, auth = true) {
@@ -33,16 +27,13 @@ const api = {
     return data;
   },
 
-  get:  (path, auth)        => api.request('GET',    path, null, auth),
-  post: (path, body, auth)  => api.request('POST',   path, body, auth),
-  del:  (path)              => api.request('DELETE', path),
+  get:    (path, auth = true)       => api.request('GET',    path, null, auth),
+  post:   (path, body, auth = true) => api.request('POST',   path, body, auth),
+  del:    (path)                    => api.request('DELETE', path),
 };
 
 function requireAuth() {
-  if (!localStorage.getItem('token')) {
-    window.location.href = 'login.html';
-    return false;
-  }
+  if (!localStorage.getItem('token')) { window.location.href = 'login.html'; return false; }
   return true;
 }
 
@@ -54,4 +45,9 @@ function logout() {
 
 function getUser() {
   try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
+}
+
+function isAdmin() {
+  const u = getUser();
+  return u && u.is_admin === true;
 }
