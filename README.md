@@ -230,10 +230,14 @@ exit;
 
 ---
 # Clone repo
+---
 git clone https://github.com/YOUR_USERNAME/music-app.git
 cd music-app
 
+---
 # Python environment
+---
+
 python3 -m venv venv
 source venv/bin/activate
 pip install -r backend/requirements.txt
@@ -555,3 +559,4 @@ journalctl -u musicapp -f       # live backend logs
 systemctl status nginx
 tail -f /var/log/nginx/error.log
 ```
+
