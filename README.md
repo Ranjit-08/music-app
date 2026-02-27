@@ -414,12 +414,12 @@ server {
 
     location / {
         root  /root/music-app/frontend;
-        index play.html;
-        try_files $uri $uri/ /play.html;
+        index index.html;
+        try_files $uri $uri.html $uri/ =404;
     }
 
     location /api/ {
-        proxy_pass         http://internal-musicapp-backend-alb-xxx.us-east-1.elb.amazonaws.com;
+        proxy_pass         http://YOUR-INTERNAL-BACKEND-ALB-DNS;
         proxy_http_version 1.1;
         proxy_set_header   Host              $host;
         proxy_set_header   X-Real-IP         $remote_addr;
@@ -558,6 +558,7 @@ journalctl -u musicapp -f       # live backend logs
 systemctl status nginx
 tail -f /var/log/nginx/error.log
 ```
+
 
 
 
