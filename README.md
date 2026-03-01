@@ -271,6 +271,7 @@ SECRET_KEY=your-long-random-string-minimum-30-chars
 # ← CRITICAL: Must match your Frontend Public ALB DNS
 FRONTEND_URL=http://musicapp-frontend-alb-xxx.us-east-1.elb.amazonaws.com
 APP_URL=http://musicapp-frontend-alb-xxx.us-east-1.elb.amazonaws.com
+ADMIN_EMAIL=your-admin-email@gmail.com
 ```
 
 Save: `Ctrl+X` → `Y` → `Enter`
@@ -558,6 +559,7 @@ journalctl -u musicapp -f       # live backend logs
 systemctl status nginx
 tail -f /var/log/nginx/error.log
 ```
+
 
 
 
