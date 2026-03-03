@@ -10,14 +10,14 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:      #06060f;
-      --card:    #11111e;
-      --border:  #1c1c30;
-      --primary: #7c3aed;
-      --accent:  #a78bfa;
-      --pink:    #ec4899;
-      --text:    #e2e8f0;
-      --muted:   #475569;
+      --bg:      #090909;
+      --card:    #141414;
+      --border:  #222222;
+      --primary: #e11d48;
+      --accent:  #f43f5e;
+      --text:    #f0f0f0;
+      --muted:   #555555;
+      --text-2:  #888888;
     }
 
     html { scroll-behavior: smooth; }
@@ -26,358 +26,266 @@
       background: var(--bg);
       color: var(--text);
       font-family: 'DM Sans', sans-serif;
-      overflow-x: hidden;
-      min-height: 100vh;
+      overflow-x: hidden; min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── ANIMATED BG ─────────────────────────────────────── */
+    /* ── BG glow ── */
     .bg-layer {
       position: fixed; inset: 0; z-index: 0; pointer-events: none;
       background:
-        radial-gradient(ellipse 80% 60% at 10% 5%,  rgba(124,58,237,0.18) 0%, transparent 55%),
-        radial-gradient(ellipse 60% 50% at 90% 90%, rgba(236,72,153,0.12) 0%, transparent 55%),
-        radial-gradient(ellipse 40% 35% at 60% 40%, rgba(124,58,237,0.07) 0%, transparent 50%),
+        radial-gradient(ellipse 70% 50% at 5% 5%,  rgba(225,29,72,0.10) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 95% 95%, rgba(190,18,60,0.07) 0%, transparent 55%),
         var(--bg);
       animation: bgPulse 10s ease-in-out infinite alternate;
     }
-    @keyframes bgPulse {
-      0%   { opacity: 1;    transform: scale(1);    }
-      100% { opacity: 0.75; transform: scale(1.03); }
-    }
+    @keyframes bgPulse { 0%{opacity:1} 100%{opacity:0.7} }
 
-    /* ── NAVBAR ──────────────────────────────────────────── */
+    /* ── NAVBAR ── */
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 48px;
-      background: rgba(6,6,15,0.7);
-      backdrop-filter: blur(28px);
+      padding: 0 48px; height: 62px;
+      background: rgba(9,9,9,0.92);
+      backdrop-filter: blur(24px);
       border-bottom: 1px solid rgba(255,255,255,0.05);
-      animation: navSlide 0.6s ease both;
+      animation: navIn 0.5s ease both;
     }
-    @keyframes navSlide {
-      from { transform: translateY(-80px); opacity: 0; }
-      to   { transform: translateY(0);     opacity: 1; }
-    }
+    @keyframes navIn { from{transform:translateY(-100%);opacity:0} to{transform:translateY(0);opacity:1} }
+
     .nav-logo {
-      font-family: 'Syne', sans-serif;
-      font-size: 22px; font-weight: 900;
+      font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 900;
       color: var(--text); text-decoration: none;
-      display: flex; align-items: center; gap: 10px;
-      letter-spacing: -0.3px;
+      display: flex; align-items: center; gap: 9px;
     }
     .nav-logo-icon {
-      width: 36px; height: 36px; border-radius: 10px;
-      background: linear-gradient(135deg, var(--primary), var(--pink));
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--primary);
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+      font-size: 16px; box-shadow: 0 0 18px rgba(225,29,72,0.4);
     }
     .nav-logo span { color: var(--accent); }
-    .nav-actions { display: flex; gap: 10px; align-items: center; }
+    .nav-actions { display: flex; gap: 9px; }
     .nav-btn {
-      padding: 8px 22px; border-radius: 50px; font-family: 'DM Sans', sans-serif;
-      font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
-      transition: all 0.25s; border: none;
+      padding: 8px 20px; border-radius: 6px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: all 0.2s; border: none;
     }
-    .nav-btn-ghost {
-      background: transparent; color: var(--muted);
+    .nav-ghost {
+      background: transparent; color: var(--text-2);
       border: 1px solid var(--border);
     }
-    .nav-btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
-    .nav-btn-primary {
-      background: linear-gradient(135deg, var(--primary), #6d28d9);
-      color: #fff; box-shadow: 0 4px 20px rgba(124,58,237,0.35);
+    .nav-ghost:hover { color: var(--text); border-color: #333; }
+    .nav-solid {
+      background: var(--primary); color: #fff;
+      box-shadow: 0 4px 18px rgba(225,29,72,0.35);
     }
-    .nav-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,58,237,0.45); }
+    .nav-solid:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(225,29,72,0.45); }
 
-    /* ── FLOATING CARDS STAGE ────────────────────────────── */
-    .cards-stage {
-      position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
+    /* ── FLOATING CARDS ── */
+    .stage { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+    .fc {
+      position: absolute; background: var(--card);
+      border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      animation: drift linear infinite; opacity: 0; will-change: transform;
     }
-
-    .float-card {
-      position: absolute;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      animation: floatDrift linear infinite;
-      opacity: 0;
-      will-change: transform;
-    }
-    .float-card.type-cover {
-      width: 90px; height: 90px;
-      border-radius: 14px;
-    }
-    .float-card.type-wide {
-      width: 160px; height: 56px;
-      border-radius: 12px;
-      padding: 10px 14px;
-      display: flex; align-items: center; gap: 10px;
-    }
-    .float-card.type-artist {
-      width: 76px; height: 76px;
-      border-radius: 50%;
+    .fc.cover  { width: 80px; height: 80px; border-radius: 12px; }
+    .fc.pill   { width: 150px; height: 52px; border-radius: 10px; padding: 9px 12px; display: flex; align-items: center; gap: 9px; }
+    .fc.circle { width: 68px; height: 68px; border-radius: 50%; }
+    .fc img    { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .fc.pill img { width: 32px; height: 32px; border-radius: 7px; flex-shrink: 0; }
+    .fc-text   { flex: 1; min-width: 0; }
+    .fc-t      { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #f0f0f0; }
+    .fc-a      { font-size: 10px; color: #555; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fc-play   { width: 18px; height: 18px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 8px; color: #fff; flex-shrink: 0; }
+    @keyframes drift {
+      0%   { opacity: 0; transform: translateY(0) rotate(var(--r0)) scale(0.9); }
+      5%   { opacity: var(--mo); }
+      92%  { opacity: var(--mo); }
+      100% { opacity: 0; transform: translateY(var(--dy)) rotate(var(--r1)) scale(1.04); }
     }
 
-    .float-card img {
-      width: 100%; height: 100%;
-      object-fit: cover; display: block;
-    }
-    .float-card.type-wide img {
-      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
-    }
-    .float-card.type-wide .fc-info { flex: 1; min-width: 0; }
-    .float-card.type-wide .fc-title {
-      font-size: 11px; font-weight: 700; white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis; color: #e2e8f0;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .float-card.type-wide .fc-artist {
-      font-size: 10px; color: #64748b; margin-top: 2px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .float-card.type-wide .fc-icon {
-      width: 20px; height: 20px; border-radius: 50%;
-      background: var(--primary); display: flex; align-items: center;
-      justify-content: center; font-size: 9px; flex-shrink: 0; color: #fff;
-    }
-
-    /* Each card gets a unique drift path */
-    @keyframes floatDrift {
-      0%   { opacity: 0;    transform: translateY(0px)   rotate(var(--rot-start)) scale(0.9); }
-      5%   { opacity: var(--max-opacity); }
-      92%  { opacity: var(--max-opacity); }
-      100% { opacity: 0;    transform: translateY(var(--drift-y)) rotate(var(--rot-end)) scale(1.05); }
-    }
-
-    /* ── HERO ────────────────────────────────────────────── */
+    /* ── HERO ── */
     .hero {
-      position: relative; z-index: 10;
-      min-height: 100vh;
+      position: relative; z-index: 10; min-height: 100vh;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      text-align: center; padding: 120px 24px 80px;
+      text-align: center; padding: 110px 24px 80px;
     }
-
-    .hero-tag {
+    .hero-chip {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 18px; border-radius: 50px;
-      background: rgba(124,58,237,0.12);
-      border: 1px solid rgba(124,58,237,0.3);
+      padding: 5px 16px; border-radius: 50px;
+      background: rgba(225,29,72,0.10);
+      border: 1px solid rgba(225,29,72,0.25);
       color: var(--accent); font-size: 13px; font-weight: 600;
       margin-bottom: 28px;
-      animation: heroFadeUp 0.7s 0.1s ease both;
+      animation: up 0.6s 0.1s ease both;
     }
-    .hero-tag .pulse {
+    .hero-chip .dot {
       width: 7px; height: 7px; border-radius: 50%;
       background: var(--accent);
-      animation: pulseGlow 2s ease infinite;
+      animation: pulse 2s ease infinite;
     }
-    @keyframes pulseGlow {
-      0%,100% { box-shadow: 0 0 0 0 rgba(167,139,250,0.4); }
-      50%     { box-shadow: 0 0 0 5px rgba(167,139,250,0); }
-    }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,0.4)} 50%{box-shadow:0 0 0 5px rgba(244,63,94,0)} }
 
     .hero-title {
       font-family: 'Syne', sans-serif;
-      font-size: clamp(48px, 8vw, 96px);
-      font-weight: 900;
-      line-height: 1.0;
-      letter-spacing: -2px;
-      margin-bottom: 6px;
-      animation: heroFadeUp 0.7s 0.2s ease both;
+      font-size: clamp(46px, 7.5vw, 92px);
+      font-weight: 900; line-height: 1.0;
+      letter-spacing: -2px; margin-bottom: 4px;
+      animation: up 0.6s 0.2s ease both;
     }
     .hero-title .line2 {
-      background: linear-gradient(135deg, var(--accent) 0%, var(--pink) 60%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      display: block;
+      background: linear-gradient(135deg, var(--accent) 0%, #ff6b6b 60%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; display: block;
     }
-
     .hero-sub {
-      font-size: clamp(15px, 2vw, 19px);
-      color: #64748b; max-width: 520px;
-      line-height: 1.65; margin: 20px auto 48px;
-      animation: heroFadeUp 0.7s 0.3s ease both;
+      font-size: clamp(15px, 2vw, 18px); color: var(--text-2);
+      max-width: 500px; line-height: 1.65; margin: 20px auto 44px;
+      animation: up 0.6s 0.3s ease both;
     }
-
-    .hero-ctas {
-      display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
-      animation: heroFadeUp 0.7s 0.4s ease both;
+    .hero-btns {
+      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+      animation: up 0.6s 0.4s ease both;
     }
-    .cta-main {
+    .hero-cta-main {
       display: inline-flex; align-items: center; gap: 10px;
-      padding: 18px 42px; border-radius: 50px;
-      background: linear-gradient(135deg, var(--primary), #6d28d9);
-      color: #fff; font-family: 'DM Sans', sans-serif;
-      font-size: 16px; font-weight: 700; text-decoration: none;
-      box-shadow: 0 6px 32px rgba(124,58,237,0.45);
-      transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
-      position: relative; overflow: hidden;
-    }
-    .cta-main::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
-      opacity: 0; transition: opacity 0.3s;
-    }
-    .cta-main:hover {
-      transform: translateY(-3px) scale(1.03);
-      box-shadow: 0 12px 48px rgba(124,58,237,0.55);
-    }
-    .cta-main:hover::before { opacity: 1; }
-    .cta-main .cta-icon {
-      width: 30px; height: 30px; border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
-    }
-
-    .cta-secondary {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 17px 36px; border-radius: 50px;
-      background: transparent; color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 16px; font-weight: 600; text-decoration: none;
-      border: 1px solid rgba(255,255,255,0.12);
+      padding: 16px 38px; border-radius: 6px;
+      background: var(--primary); color: #fff;
+      font-family: 'DM Sans', sans-serif; font-size: 16px;
+      font-weight: 700; text-decoration: none;
+      box-shadow: 0 6px 28px rgba(225,29,72,0.4);
       transition: all 0.25s;
     }
-    .cta-secondary:hover {
-      border-color: rgba(255,255,255,0.3);
-      background: rgba(255,255,255,0.04);
-      transform: translateY(-2px);
+    .hero-cta-main:hover { transform: translateY(-2px); box-shadow: 0 10px 36px rgba(225,29,72,0.5); }
+    .hero-cta-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 15px 32px; border-radius: 6px;
+      background: transparent; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 16px;
+      font-weight: 600; text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.12);
+      transition: all 0.2s;
     }
+    .hero-cta-ghost:hover { border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.04); }
 
-    /* ── SCROLL INDICATOR ────────────────────────────────── */
     .scroll-hint {
-      position: absolute; bottom: 32px; left: 50%;
-      transform: translateX(-50%);
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-      color: var(--muted); font-size: 12px;
-      animation: heroFadeUp 1s 1s ease both;
+      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 7px;
+      color: var(--muted); font-size: 11px;
+      animation: up 1s 1s ease both;
     }
-    .scroll-arrow {
-      width: 24px; height: 40px; border: 2px solid rgba(255,255,255,0.15);
-      border-radius: 12px; display: flex; justify-content: center;
-      padding-top: 7px;
+    .scroll-box {
+      width: 22px; height: 36px; border: 2px solid rgba(255,255,255,0.12);
+      border-radius: 11px; display: flex; justify-content: center; padding-top: 6px;
     }
-    .scroll-dot {
-      width: 4px; height: 8px; border-radius: 2px;
-      background: var(--accent);
-      animation: scrollBounce 2s ease infinite;
+    .scroll-inner {
+      width: 3px; height: 7px; border-radius: 2px; background: var(--accent);
+      animation: scrollB 2s ease infinite;
     }
-    @keyframes scrollBounce {
-      0%,100% { transform: translateY(0);   opacity: 1;   }
-      50%     { transform: translateY(12px); opacity: 0.3; }
-    }
+    @keyframes scrollB { 0%,100%{transform:translateY(0);opacity:1} 50%{transform:translateY(11px);opacity:0.3} }
+    @keyframes up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 
-    @keyframes heroFadeUp {
-      from { opacity: 0; transform: translateY(24px); }
-      to   { opacity: 1; transform: translateY(0);    }
+    /* ── TICKER ── */
+    .ticker-wrap {
+      position: relative; z-index: 10;
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      padding: 12px 0; overflow: hidden; background: rgba(14,14,14,0.9);
     }
+    .ticker {
+      display: flex; gap: 28px;
+      animation: tickerMove 32s linear infinite; width: max-content;
+    }
+    .ticker:hover { animation-play-state: paused; }
+    @keyframes tickerMove { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+    .t-item {
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+      color: var(--muted); font-size: 13px; font-weight: 500;
+    }
+    .t-item .d { width: 4px; height: 4px; border-radius: 50%; background: var(--primary); }
 
-    /* ── FEATURES SECTION ────────────────────────────────── */
+    /* ── FEATURES ── */
     .features {
       position: relative; z-index: 10;
-      padding: 100px 48px;
-      max-width: 1100px; margin: 0 auto;
+      padding: 90px 48px; max-width: 1080px; margin: 0 auto;
     }
-    .features-tag {
-      text-align: center; font-size: 12px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.12em;
-      color: var(--accent); margin-bottom: 16px;
+    .feat-tag {
+      text-align: center; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--accent); margin-bottom: 14px;
     }
-    .features-title {
-      text-align: center;
-      font-family: 'Syne', sans-serif;
-      font-size: clamp(28px, 4vw, 48px);
-      font-weight: 800; margin-bottom: 60px;
-      letter-spacing: -1px;
+    .feat-head {
+      text-align: center; font-family: 'Syne', sans-serif;
+      font-size: clamp(26px, 4vw, 44px); font-weight: 800;
+      margin-bottom: 56px; letter-spacing: -1px;
     }
-    .features-title span {
-      background: linear-gradient(135deg, var(--accent), var(--pink));
+    .feat-head span {
+      background: linear-gradient(135deg, var(--accent), #ff6b6b);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-    .features-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
-    }
-    @media (max-width: 768px) { .features-grid { grid-template-columns: 1fr; } }
-    .feature-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 20px; padding: 32px;
-      transition: all 0.3s;
-      opacity: 0; transform: translateY(30px);
-    }
-    .feature-card.visible {
-      opacity: 1; transform: translateY(0);
-      transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.3s, box-shadow 0.3s;
-    }
-    .feature-card:hover {
-      border-color: rgba(124,58,237,0.35);
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(124,58,237,0.12);
-    }
-    .feature-icon {
-      width: 52px; height: 52px; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px; margin-bottom: 20px;
-    }
-    .feature-icon.purple { background: rgba(124,58,237,0.15); }
-    .feature-icon.pink   { background: rgba(236,72,153,0.15); }
-    .feature-icon.blue   { background: rgba(59,130,246,0.15); }
-    .feature-icon.green  { background: rgba(34,197,94,0.15);  }
-    .feature-icon.orange { background: rgba(249,115,22,0.15); }
-    .feature-icon.cyan   { background: rgba(6,182,212,0.15);  }
-    .feature-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
-    .feature-desc  { font-size: 14px; color: #64748b; line-height: 1.7; }
+    .feat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    @media(max-width:768px) { .feat-grid { grid-template-columns: 1fr; } }
 
-    /* ── BOTTOM CTA ──────────────────────────────────────── */
+    .feat-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px;
+      transition: all 0.25s;
+      opacity: 0; transform: translateY(24px);
+    }
+    .feat-card.visible {
+      opacity: 1; transform: translateY(0);
+      transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.25s;
+    }
+    .feat-card:hover { border-color: rgba(225,29,72,0.3); transform: translateY(-3px); }
+    .feat-ic {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 18px;
+      background: rgba(225,29,72,0.10);
+    }
+    .feat-name { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .feat-desc { font-size: 13px; color: var(--text-2); line-height: 1.65; }
+
+    /* ── BOTTOM CTA ── */
     .bottom-cta {
       position: relative; z-index: 10;
-      padding: 80px 48px;
-      text-align: center;
+      padding: 70px 48px; text-align: center;
     }
-    .bottom-cta-box {
-      max-width: 680px; margin: 0 auto;
-      background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(236,72,153,0.08));
-      border: 1px solid rgba(124,58,237,0.25);
-      border-radius: 28px; padding: 60px 48px;
+    .cta-box {
+      max-width: 620px; margin: 0 auto;
+      background: rgba(225,29,72,0.05);
+      border: 1px solid rgba(225,29,72,0.18);
+      border-radius: 20px; padding: 54px 44px;
       position: relative; overflow: hidden;
     }
-    .bottom-cta-box::before {
-      content: '';
-      position: absolute; top: -1px; left: 10%; right: 10%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(124,58,237,0.7), rgba(236,72,153,0.5), transparent);
+    .cta-box::before {
+      content: ''; position: absolute; top: -1px; left: 10%; right: 10%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      opacity: 0.7;
     }
-    .bottom-cta-title {
+    .cta-box-title {
       font-family: 'Syne', sans-serif;
-      font-size: clamp(26px, 4vw, 40px);
-      font-weight: 900; margin-bottom: 14px; letter-spacing: -0.5px;
+      font-size: clamp(24px, 3.5vw, 36px);
+      font-weight: 900; margin-bottom: 12px; letter-spacing: -0.5px;
     }
-    .bottom-cta-sub { color: #64748b; font-size: 16px; margin-bottom: 36px; }
-    .bottom-cta-btn {
-      display: inline-flex; align-items: center; gap: 12px;
-      padding: 18px 48px; border-radius: 50px;
-      background: linear-gradient(135deg, var(--primary), var(--pink));
-      color: #fff; font-family: 'DM Sans', sans-serif;
-      font-size: 17px; font-weight: 700; text-decoration: none;
-      box-shadow: 0 6px 40px rgba(124,58,237,0.4);
-      transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+    .cta-box-sub { color: var(--text-2); font-size: 15px; margin-bottom: 32px; }
+    .cta-box-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 16px 42px; border-radius: 6px;
+      background: var(--primary); color: #fff;
+      font-family: 'DM Sans', sans-serif; font-size: 16px;
+      font-weight: 700; text-decoration: none;
+      box-shadow: 0 6px 32px rgba(225,29,72,0.4);
+      transition: all 0.25s;
     }
-    .bottom-cta-btn:hover {
-      transform: translateY(-3px) scale(1.04);
-      box-shadow: 0 12px 56px rgba(124,58,237,0.5);
-    }
+    .cta-box-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 44px rgba(225,29,72,0.5); }
 
-    /* ── FOOTER ──────────────────────────────────────────── */
+    /* ── FOOTER ── */
     footer {
-      position: relative; z-index: 10;
-      padding: 32px 48px;
+      position: relative; z-index: 10; padding: 28px 48px;
       border-top: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
       color: var(--muted); font-size: 13px;
@@ -385,150 +293,110 @@
     footer a { color: var(--muted); text-decoration: none; }
     footer a:hover { color: var(--accent); }
 
-    /* ── TICKER ──────────────────────────────────────────── */
-    .ticker-wrap {
-      position: relative; z-index: 10;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 0; overflow: hidden;
-      background: rgba(17,17,30,0.8);
-      margin-bottom: 0;
-    }
-    .ticker {
-      display: flex; gap: 32px;
-      animation: tickerScroll 30s linear infinite;
-      width: max-content;
-    }
-    .ticker:hover { animation-play-state: paused; }
-    @keyframes tickerScroll {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-    .ticker-item {
-      display: flex; align-items: center; gap: 10px;
-      white-space: nowrap; color: var(--muted); font-size: 13px; font-weight: 500;
-    }
-    .ticker-item .dot {
-      width: 5px; height: 5px; border-radius: 50%;
-      background: var(--accent);
-    }
-
     @media (max-width: 600px) {
-      nav { padding: 14px 20px; }
-      .hero { padding: 100px 20px 60px; }
-      .features { padding: 60px 20px; }
-      .bottom-cta { padding: 60px 20px; }
-      .bottom-cta-box { padding: 40px 24px; }
-      footer { flex-direction: column; gap: 10px; text-align: center; }
+      nav { padding: 0 18px; }
+      .hero { padding: 96px 18px 60px; }
+      .features { padding: 60px 18px; }
+      .bottom-cta { padding: 50px 18px; }
+      .cta-box { padding: 36px 22px; }
+      footer { flex-direction: column; gap: 8px; text-align: center; }
     }
   </style>
 </head>
 <body>
 
-<!-- Animated background -->
 <div class="bg-layer"></div>
+<div class="stage" id="stage"></div>
 
-<!-- Floating Cards Stage -->
-<div class="cards-stage" id="cardsStage"></div>
-
-<!-- Navbar -->
+<!-- NAVBAR -->
 <nav>
   <a class="nav-logo" href="index.html">
     <div class="nav-logo-icon">🎧</div>
     Listen<span>Me</span>
   </a>
   <div class="nav-actions">
-    <a href="login.html"  class="nav-btn nav-btn-ghost">Sign In</a>
-    <a href="signup.html" class="nav-btn nav-btn-primary">Get Started</a>
+    <a href="login.html"  class="nav-btn nav-ghost">Sign In</a>
+    <a href="signup.html" class="nav-btn nav-solid">Get Started</a>
   </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-tag">
-    <span class="pulse"></span>
-    Your personal music streaming space
+  <div class="hero-chip">
+    <span class="dot"></span>
+    Your personal music space
   </div>
-
   <h1 class="hero-title">
     Music that moves<br/>
     <span class="line2">your soul</span>
   </h1>
-
   <p class="hero-sub">
-    Stream every track in the library, discover new artists, build your favourites list, and lose yourself in the music — anytime, anywhere.
+    Stream the full library, discover artists, build your favourites, and lose yourself in the music — anytime, anywhere.
   </p>
-
-  <div class="hero-ctas">
-    <a href="login.html" class="cta-main">
-      <span class="cta-icon">🎧</span>
-      Start Listening
+  <div class="hero-btns">
+    <a href="login.html" class="hero-cta-main">
+      🎧 Start Listening
     </a>
-    <a href="signup.html" class="cta-secondary">
-      Create free account →
+    <a href="signup.html" class="hero-cta-ghost">
+      Create account →
     </a>
   </div>
-
   <div class="scroll-hint">
-    <div class="scroll-arrow"><div class="scroll-dot"></div></div>
-    <span>Scroll to explore</span>
+    <div class="scroll-box"><div class="scroll-inner"></div></div>
+    <span>Scroll</span>
   </div>
 </section>
 
 <!-- TICKER -->
-<div class="ticker-wrap">
-  <div class="ticker" id="ticker"></div>
-</div>
+<div class="ticker-wrap"><div class="ticker" id="ticker"></div></div>
 
 <!-- FEATURES -->
 <section class="features">
-  <div class="features-tag">Why ListenMe</div>
-  <h2 class="features-title">Everything you need to <span>enjoy music</span></h2>
-
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon purple">🎵</div>
-      <div class="feature-title">Curated Library</div>
-      <div class="feature-desc">Every track is hand-picked and uploaded by our admin team — no clutter, just great music.</div>
+  <div class="feat-tag">Why ListenMe</div>
+  <h2 class="feat-head">Everything you need to <span>enjoy music</span></h2>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-ic">🎵</div>
+      <div class="feat-name">Curated Library</div>
+      <div class="feat-desc">Every track is hand-picked — no clutter, just great music.</div>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon pink">❤️</div>
-      <div class="feature-title">Personal Favourites</div>
-      <div class="feature-desc">Heart your favourite songs. Build your personal collection that's always waiting for you when you return.</div>
+    <div class="feat-card">
+      <div class="feat-ic">❤️</div>
+      <div class="feat-name">Personal Favourites</div>
+      <div class="feat-desc">Heart your favourite songs and build a collection that's always there.</div>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon blue">🎤</div>
-      <div class="feature-title">Browse by Artist</div>
-      <div class="feature-desc">Explore the full discography of every artist. All songs grouped neatly so you never lose a track.</div>
+    <div class="feat-card">
+      <div class="feat-ic">🎤</div>
+      <div class="feat-name">Browse by Artist</div>
+      <div class="feat-desc">All songs grouped by artist so you never lose a track.</div>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon green">🔀</div>
-      <div class="feature-title">Shuffle & Loop</div>
-      <div class="feature-desc">Shuffle the whole library or loop your favourite track endlessly. You control your listening experience.</div>
+    <div class="feat-card">
+      <div class="feat-ic">🔀</div>
+      <div class="feat-name">Shuffle & Loop</div>
+      <div class="feat-desc">Shuffle the full library or loop a favourite endlessly.</div>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon orange">🔒</div>
-      <div class="feature-title">Secure & Private</div>
-      <div class="feature-desc">Your account is protected. No ads, no tracking — just you and the music you love.</div>
+    <div class="feat-card">
+      <div class="feat-ic">🔒</div>
+      <div class="feat-name">Secure & Private</div>
+      <div class="feat-desc">No ads, no tracking — just you and the music you love.</div>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon cyan">🌐</div>
-      <div class="feature-title">Stream Anywhere</div>
-      <div class="feature-desc">High-quality streaming delivered fast from cloud storage. Works on any browser, any device.</div>
+    <div class="feat-card">
+      <div class="feat-ic">🌐</div>
+      <div class="feat-name">Stream Anywhere</div>
+      <div class="feat-desc">High-quality streaming from the cloud. Works on every device.</div>
     </div>
   </div>
 </section>
 
 <!-- BOTTOM CTA -->
 <section class="bottom-cta">
-  <div class="bottom-cta-box">
-    <div class="bottom-cta-title">Ready to start listening?</div>
-    <div class="bottom-cta-sub">Join ListenMe today — it's completely free.</div>
-    <a href="login.html" class="bottom-cta-btn">
-      🎧 Listen Songs Now
-    </a>
-    <div style="margin-top:20px;font-size:13px;color:#475569;">
-      Already have an account? <a href="login.html" style="color:#a78bfa;text-decoration:none;font-weight:600;">Sign in →</a>
+  <div class="cta-box">
+    <div class="cta-box-title">Ready to start listening?</div>
+    <div class="cta-box-sub">Join ListenMe today — completely free.</div>
+    <a href="login.html" class="cta-box-btn">🎧 Listen Now</a>
+    <div style="margin-top:18px;font-size:13px;color:var(--muted);">
+      Already have an account?
+      <a href="login.html" style="color:var(--accent);text-decoration:none;font-weight:600;"> Sign in →</a>
     </div>
   </div>
 </section>
@@ -536,7 +404,7 @@
 <!-- FOOTER -->
 <footer>
   <div>
-    <a href="index.html" style="font-weight:700;font-family:'Syne',sans-serif;">🎧 ListenMe</a>
+    <a href="index.html" style="font-weight:800;font-family:'Syne',sans-serif;">🎧 ListenMe</a>
     &nbsp;· Your music, your world.
   </div>
   <div>
@@ -547,155 +415,97 @@
 </footer>
 
 <script>
-// ── Data for floating cards ────────────────────────────────────────────────────
-const ARTISTS = [
-  { name:'The Weeknd',     emoji:'🎤', color:'#7c3aed' },
-  { name:'Billie Eilish',  emoji:'🎸', color:'#ec4899' },
-  { name:'Drake',          emoji:'🎵', color:'#3b82f6' },
-  { name:'Ariana Grande',  emoji:'🎶', color:'#f472b6' },
-  { name:'Bad Bunny',      emoji:'🎧', color:'#8b5cf6' },
-  { name:'Taylor Swift',   emoji:'🎹', color:'#a78bfa' },
-  { name:'Post Malone',    emoji:'🎺', color:'#06b6d4' },
-  { name:'Doja Cat',       emoji:'🎻', color:'#ec4899' },
-  { name:'SZA',            emoji:'🥁', color:'#22c55e' },
-  { name:'Travis Scott',   emoji:'🎤', color:'#f97316' },
-];
-
 const SONGS = [
-  { title:'Blinding Lights',  artist:'The Weeknd',    emoji:'🌃' },
-  { title:'Happier Than Ever',artist:'Billie Eilish', emoji:'🌊' },
-  { title:'God\'s Plan',       artist:'Drake',          emoji:'☁️' },
-  { title:'positions',        artist:'Ariana Grande', emoji:'💫' },
-  { title:'Motomami',         artist:'Rosalía',        emoji:'🌹' },
-  { title:'Anti-Hero',        artist:'Taylor Swift',  emoji:'🎭' },
-  { title:'Sunflower',        artist:'Post Malone',   emoji:'🌻' },
-  { title:'Woman',            artist:'Doja Cat',      emoji:'🐱' },
-  { title:'Kill Bill',        artist:'SZA',            emoji:'🌸' },
-  { title:'SICKO MODE',       artist:'Travis Scott',  emoji:'🌀' },
-  { title:'Save Your Tears',  artist:'The Weeknd',    emoji:'💧' },
-  { title:'lovely',           artist:'Billie Eilish', emoji:'🖤' },
+  {title:'Blinding Lights', artist:'The Weeknd',    e:'🌃'},
+  {title:'Happier Than Ever',artist:'Billie Eilish',e:'🌊'},
+  {title:"God's Plan",      artist:'Drake',          e:'☁️'},
+  {title:'Anti-Hero',       artist:'Taylor Swift',  e:'🎭'},
+  {title:'Sunflower',       artist:'Post Malone',   e:'🌻'},
+  {title:'Kill Bill',       artist:'SZA',            e:'🌸'},
+  {title:'SICKO MODE',      artist:'Travis Scott',  e:'🌀'},
+  {title:'Woman',           artist:'Doja Cat',       e:'🐱'},
+  {title:'positions',       artist:'Ariana Grande', e:'💫'},
+  {title:'lovely',          artist:'Billie Eilish', e:'🖤'},
+];
+const ARTISTS=[
+  {name:'The Weeknd',e:'TW',c:'#e11d48'},
+  {name:'Billie Eilish',e:'BE',c:'#be123c'},
+  {name:'Drake',e:'DR',c:'#9f1239'},
+  {name:'Taylor Swift',e:'TS',c:'#e11d48'},
+  {name:'Post Malone',e:'PM',c:'#be123c'},
+  {name:'SZA',e:'SZ',c:'#9f1239'},
 ];
 
-// ── Spawn floating cards ──────────────────────────────────────────────────────
-const stage = document.getElementById('cardsStage');
-
+// Floating cards
+const stage=document.getElementById('stage');
 function spawnCard() {
-  const card = document.createElement('div');
-  const roll = Math.random();
-  const isMobile = window.innerWidth < 600;
+  const el=document.createElement('div');
+  const r=Math.random();
+  const side=Math.random()<0.5?'left':'right';
+  const xR=side==='left'?[2,26]:[74,97];
+  const x=xR[0]+Math.random()*(xR[1]-xR[0]);
+  const y=15+Math.random()*70;
+  const dy=-(160+Math.random()*240)+'px';
+  const r0=(Math.random()-0.5)*14+'deg';
+  const r1=(Math.random()-0.5)*20+'deg';
+  const dur=18+Math.random()*20;
+  const del=Math.random()*18;
+  const mo=0.22+Math.random()*0.30;
+  el.style.setProperty('--dy',dy);
+  el.style.setProperty('--r0',r0);
+  el.style.setProperty('--r1',r1);
+  el.style.setProperty('--mo',mo);
+  el.style.left=x+'vw'; el.style.top=y+'vh';
+  el.style.animationDuration=dur+'s'; el.style.animationDelay=del+'s';
 
-  // Pick side: left zone or right zone (avoid center 40%)
-  const side   = Math.random() < 0.5 ? 'left' : 'right';
-  const xRange = side === 'left' ? [2, 28] : [72, 97];
-  const x      = xRange[0] + Math.random() * (xRange[1] - xRange[0]);
-  const y      = 20 + Math.random() * 65; // vertical start %
-
-  const driftY      = -(180 + Math.random() * 280) + 'px';
-  const driftX      = (Math.random() - 0.5) * 60 + 'px';
-  const rotStart    = (Math.random() - 0.5) * 16 + 'deg';
-  const rotEnd      = (Math.random() - 0.5) * 24 + 'deg';
-  const duration    = 18 + Math.random() * 22;
-  const delay       = Math.random() * 20;
-  const maxOpacity  = 0.28 + Math.random() * 0.35;
-
-  card.style.setProperty('--drift-y',      driftY);
-  card.style.setProperty('--rot-start',    rotStart);
-  card.style.setProperty('--rot-end',      rotEnd);
-  card.style.setProperty('--max-opacity',  maxOpacity);
-
-  card.style.left              = x + 'vw';
-  card.style.top               = y + 'vh';
-  card.style.animationDuration = duration + 's';
-  card.style.animationDelay    = delay + 's';
-
-  if (roll < 0.45) {
-    // Album cover style
-    card.className = 'float-card type-cover';
-    const song = SONGS[Math.floor(Math.random() * SONGS.length)];
-    card.innerHTML = `
-      <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;
-           font-size:38px;background:linear-gradient(135deg,#1a1a30,#0d0d1a);">${song.emoji}</div>`;
-  } else if (roll < 0.75) {
-    // Artist avatar style
-    card.className = 'float-card type-artist';
-    const art = ARTISTS[Math.floor(Math.random() * ARTISTS.length)];
-    const letters = art.name.split(' ').map(w=>w[0]).join('').slice(0,2);
-    card.innerHTML = `
-      <div style="width:100%;height:100%;border-radius:50%;display:flex;align-items:center;
-           justify-content:center;font-size:28px;font-weight:900;color:#fff;
-           font-family:'Syne',sans-serif;
-           background:linear-gradient(135deg,${art.color},${art.color}99);">
-        ${letters}
-      </div>`;
+  if(r<0.45){
+    el.className='fc cover';
+    const s=SONGS[Math.floor(Math.random()*SONGS.length)];
+    el.innerHTML=`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:34px;background:linear-gradient(135deg,#1a0a0f,#0f0808)">${s.e}</div>`;
+  } else if(r<0.75){
+    el.className='fc circle';
+    const a=ARTISTS[Math.floor(Math.random()*ARTISTS.length)];
+    el.innerHTML=`<div style="width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;font-family:'Syne',sans-serif;background:${a.c};">${a.e}</div>`;
   } else {
-    // Now-playing row style
-    card.className = 'float-card type-wide';
-    const song = SONGS[Math.floor(Math.random() * SONGS.length)];
-    card.innerHTML = `
-      <div style="width:36px;height:36px;border-radius:8px;flex-shrink:0;overflow:hidden;
-           display:flex;align-items:center;justify-content:center;font-size:20px;
-           background:linear-gradient(135deg,#1e1e3a,#0d0d1a);">${song.emoji}</div>
-      <div class="fc-info">
-        <div class="fc-title">${song.title}</div>
-        <div class="fc-artist">${song.artist}</div>
-      </div>
-      <div class="fc-icon">▶</div>`;
+    el.className='fc pill';
+    const s=SONGS[Math.floor(Math.random()*SONGS.length)];
+    el.innerHTML=`<div style="width:32px;height:32px;border-radius:7px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px;background:linear-gradient(135deg,#1a0a0f,#0f0808)">${s.e}</div><div class="fc-text"><div class="fc-t">${s.title}</div><div class="fc-a">${s.artist}</div></div><div class="fc-play">▶</div>`;
   }
-
-  stage.appendChild(card);
-
-  // Remove after animation ends + delay
-  setTimeout(() => {
-    if (card.parentNode) card.parentNode.removeChild(card);
-  }, (duration + delay + 2) * 1000);
+  stage.appendChild(el);
+  setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); },(dur+del+2)*1000);
 }
-
-// Spawn cards continuously
 function spawnBatch() {
-  const count = window.innerWidth < 600 ? 12 : 22;
-  for (let i = 0; i < count; i++) spawnCard();
+  const n=window.innerWidth<600?10:20;
+  for(let i=0;i<n;i++) spawnCard();
 }
+spawnBatch(); setInterval(spawnBatch,22000);
 
-spawnBatch();
-setInterval(spawnBatch, 24000);
-
-// ── Ticker ────────────────────────────────────────────────────────────────────
-const tickerItems = [
-  ...SONGS.map(s => `${s.emoji} ${s.title} — ${s.artist}`),
-  '🎧 Stream anytime',
-  '❤️ Save favourites',
-  '🔀 Shuffle mode',
-  '🎤 Browse artists',
-  '🔒 Secure & private',
+// Ticker
+const tickItems=[
+  ...SONGS.map(s=>`${s.e} ${s.title} — ${s.artist}`),
+  '🎧 Stream anytime','❤️ Save favourites','🔀 Shuffle mode','🎤 Browse artists','🔒 Ad-free'
 ];
-const ticker = document.getElementById('ticker');
-// Duplicate for seamless loop
-const doubled = [...tickerItems, ...tickerItems];
-ticker.innerHTML = doubled.map(t => `
-  <div class="ticker-item"><span class="dot"></span>${t}</div>
-`).join('');
+const ticker=document.getElementById('ticker');
+const doubled=[...tickItems,...tickItems];
+ticker.innerHTML=doubled.map(t=>`<div class="t-item"><span class="d"></span>${t}</div>`).join('');
 
-// ── Scroll-reveal for feature cards ──────────────────────────────────────────
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((entry, i) => {
-    if (entry.isIntersecting) {
-      const cards = document.querySelectorAll('.feature-card');
-      cards.forEach((card, idx) => {
-        setTimeout(() => card.classList.add('visible'), idx * 100);
-      });
-      observer.disconnect();
+// Scroll reveal
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      document.querySelectorAll('.feat-card').forEach((c,i)=>setTimeout(()=>c.classList.add('visible'),i*90));
+      obs.disconnect();
     }
   });
-}, { threshold: 0.15 });
+},{threshold:0.1});
+obs.observe(document.querySelector('.feat-grid'));
 
-observer.observe(document.querySelector('.features-grid'));
-
-// ── Redirect if already logged in ────────────────────────────────────────────
-if (localStorage.getItem('token')) {
-  document.querySelector('.cta-main').href   = 'play.html';
-  document.querySelector('.bottom-cta-btn').href = 'play.html';
-  document.querySelector('.nav-btn-primary').href = 'play.html';
-  document.querySelector('.nav-btn-primary').textContent = 'Open App';
+// If already logged in
+if(localStorage.getItem('token')){
+  document.querySelector('.hero-cta-main').href='play.html';
+  document.querySelector('.cta-box-btn').href='play.html';
+  document.querySelector('.nav-solid').href='play.html';
+  document.querySelector('.nav-solid').textContent='Open App';
 }
 </script>
 </body>
