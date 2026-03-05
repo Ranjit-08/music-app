@@ -1,512 +1,604 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ListenMe — Your Music, Your World</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ListenMe — Music for everyone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg:      #090909;
-      --card:    #141414;
-      --border:  #222222;
-      --primary: #e11d48;
-      --accent:  #f43f5e;
-      --text:    #f0f0f0;
-      --muted:   #555555;
-      --text-2:  #888888;
+      --bg:      #0a0a0a;
+      --surface: #121212;
+      --card:    #181818;
+      --border:  #282828;
+      --hover:   #282828;
+      --primary: #1db954;
+      --accent:  #1ed760;
+      --text:    #ffffff;
+      --text-2:  #b3b3b3;
+      --muted:   #535353;
     }
-
     html { scroll-behavior: smooth; }
-
     body {
-      background: var(--bg);
-      color: var(--text);
+      background: var(--bg); color: var(--text);
       font-family: 'DM Sans', sans-serif;
-      overflow-x: hidden; min-height: 100vh;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
-    /* ── BG glow ── */
-    .bg-layer {
+    /* ── GRID LINES background (subtle) ── */
+    body::before {
+      content: '';
       position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background:
-        radial-gradient(ellipse 70% 50% at 5% 5%,  rgba(225,29,72,0.10) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 40% at 95% 95%, rgba(190,18,60,0.07) 0%, transparent 55%),
-        var(--bg);
-      animation: bgPulse 10s ease-in-out infinite alternate;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 0%, transparent 100%);
     }
-    @keyframes bgPulse { 0%{opacity:1} 100%{opacity:0.7} }
 
-    /* ── NAVBAR ── */
+    /* ── Green glow spot ── */
+    .glow-spot {
+      position: fixed; top: -180px; left: 50%; transform: translateX(-50%);
+      width: 700px; height: 700px; border-radius: 50%; z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(29,185,84,0.07) 0%, transparent 70%);
+    }
+
+    /* ══ NAVBAR ══ */
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 48px; height: 62px;
-      background: rgba(9,9,9,0.92);
-      backdrop-filter: blur(24px);
+      height: 64px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px;
       border-bottom: 1px solid rgba(255,255,255,0.05);
-      animation: navIn 0.5s ease both;
+      background: rgba(10,10,10,0.9);
+      backdrop-filter: blur(20px);
+      opacity: 0; animation: navSlide 0.6s 0.1s ease forwards;
     }
-    @keyframes navIn { from{transform:translateY(-100%);opacity:0} to{transform:translateY(0);opacity:1} }
+    @keyframes navSlide { to { opacity: 1; } }
 
     .nav-logo {
-      font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 900;
-      color: var(--text); text-decoration: none;
       display: flex; align-items: center; gap: 9px;
+      font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 900;
+      color: var(--text); text-decoration: none;
     }
-    .nav-logo-icon {
-      width: 32px; height: 32px; border-radius: 8px;
-      background: var(--primary);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px; box-shadow: 0 0 18px rgba(225,29,72,0.4);
+    .nav-logo-dot {
+      width: 32px; height: 32px; flex-shrink: 0;
     }
     .nav-logo span { color: var(--accent); }
-    .nav-actions { display: flex; gap: 9px; }
+
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .nav-link {
+      color: var(--text-2); font-size: 14px; font-weight: 600;
+      text-decoration: none; padding: 8px 14px; border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .nav-link:hover { color: var(--text); }
     .nav-btn {
-      padding: 8px 20px; border-radius: 6px;
-      font-family: 'DM Sans', sans-serif; font-size: 14px;
-      font-weight: 600; cursor: pointer; text-decoration: none;
-      transition: all 0.2s; border: none;
+      padding: 8px 22px; border-radius: 50px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      text-decoration: none; transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
     }
-    .nav-ghost {
-      background: transparent; color: var(--text-2);
-      border: 1px solid var(--border);
+    .nav-btn-ghost {
+      background: transparent; color: var(--text);
+      border: 1px solid rgba(255,255,255,0.15);
     }
-    .nav-ghost:hover { color: var(--text); border-color: #333; }
-    .nav-solid {
-      background: var(--primary); color: #fff;
-      box-shadow: 0 4px 18px rgba(225,29,72,0.35);
+    .nav-btn-ghost:hover { border-color: rgba(255,255,255,0.4); }
+    .nav-btn-solid {
+      background: var(--primary); color: #000; border: none;
     }
-    .nav-solid:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(225,29,72,0.45); }
+    .nav-btn-solid:hover { background: var(--accent); transform: scale(1.02); }
 
-    /* ── FLOATING CARDS ── */
-    .stage { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
-    .fc {
-      position: absolute; background: var(--card);
-      border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-      animation: drift linear infinite; opacity: 0; will-change: transform;
-    }
-    .fc.cover  { width: 80px; height: 80px; border-radius: 12px; }
-    .fc.pill   { width: 150px; height: 52px; border-radius: 10px; padding: 9px 12px; display: flex; align-items: center; gap: 9px; }
-    .fc.circle { width: 68px; height: 68px; border-radius: 50%; }
-    .fc img    { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .fc.pill img { width: 32px; height: 32px; border-radius: 7px; flex-shrink: 0; }
-    .fc-text   { flex: 1; min-width: 0; }
-    .fc-t      { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #f0f0f0; }
-    .fc-a      { font-size: 10px; color: #555; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .fc-play   { width: 18px; height: 18px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 8px; color: #fff; flex-shrink: 0; }
-    @keyframes drift {
-      0%   { opacity: 0; transform: translateY(0) rotate(var(--r0)) scale(0.9); }
-      5%   { opacity: var(--mo); }
-      92%  { opacity: var(--mo); }
-      100% { opacity: 0; transform: translateY(var(--dy)) rotate(var(--r1)) scale(1.04); }
-    }
-
-    /* ── HERO ── */
+    /* ══ HERO ══ */
     .hero {
-      position: relative; z-index: 10; min-height: 100vh;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center; padding: 110px 24px 80px;
+      position: relative; z-index: 10;
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding: 100px 48px 80px;
+      max-width: 1200px; margin: 0 auto;
+      gap: 80px;
     }
-    .hero-chip {
+
+    .hero-left { flex: 1; min-width: 0; }
+
+    .hero-tag {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 5px 16px; border-radius: 50px;
-      background: rgba(225,29,72,0.10);
-      border: 1px solid rgba(225,29,72,0.25);
-      color: var(--accent); font-size: 13px; font-weight: 600;
-      margin-bottom: 28px;
-      animation: up 0.6s 0.1s ease both;
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: var(--primary);
+      margin-bottom: 24px;
+      opacity: 0; animation: fadeUp 0.6s 0.3s ease forwards;
     }
-    .hero-chip .dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--accent);
-      animation: pulse 2s ease infinite;
-    }
-    @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,0.4)} 50%{box-shadow:0 0 0 5px rgba(244,63,94,0)} }
+    .hero-tag-line { width: 24px; height: 2px; background: var(--primary); border-radius: 2px; }
 
     .hero-title {
       font-family: 'Syne', sans-serif;
-      font-size: clamp(46px, 7.5vw, 92px);
+      font-size: clamp(48px, 6vw, 84px);
       font-weight: 900; line-height: 1.0;
-      letter-spacing: -2px; margin-bottom: 4px;
-      animation: up 0.6s 0.2s ease both;
+      letter-spacing: -2px;
+      margin-bottom: 22px;
+      opacity: 0; animation: fadeUp 0.6s 0.4s ease forwards;
     }
-    .hero-title .line2 {
-      background: linear-gradient(135deg, var(--accent) 0%, #ff6b6b 60%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text; display: block;
+    .hero-title em {
+      font-style: normal;
+      color: var(--primary);
     }
+
     .hero-sub {
-      font-size: clamp(15px, 2vw, 18px); color: var(--text-2);
-      max-width: 500px; line-height: 1.65; margin: 20px auto 44px;
-      animation: up 0.6s 0.3s ease both;
+      font-size: 17px; color: var(--text-2); line-height: 1.7;
+      max-width: 460px; margin-bottom: 44px;
+      opacity: 0; animation: fadeUp 0.6s 0.5s ease forwards;
     }
-    .hero-btns {
-      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
-      animation: up 0.6s 0.4s ease both;
+
+    .hero-actions {
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      opacity: 0; animation: fadeUp 0.6s 0.6s ease forwards;
     }
-    .hero-cta-main {
+    .hero-btn-main {
       display: inline-flex; align-items: center; gap: 10px;
-      padding: 16px 38px; border-radius: 6px;
-      background: var(--primary); color: #fff;
-      font-family: 'DM Sans', sans-serif; font-size: 16px;
-      font-weight: 700; text-decoration: none;
-      box-shadow: 0 6px 28px rgba(225,29,72,0.4);
-      transition: all 0.25s;
+      padding: 15px 36px; border-radius: 50px;
+      background: var(--primary); color: #000;
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700;
+      text-decoration: none; transition: all 0.2s;
     }
-    .hero-cta-main:hover { transform: translateY(-2px); box-shadow: 0 10px 36px rgba(225,29,72,0.5); }
-    .hero-cta-ghost {
+    .hero-btn-main:hover { background: var(--accent); transform: scale(1.03); }
+    .hero-btn-ghost {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 15px 32px; border-radius: 6px;
+      padding: 14px 28px; border-radius: 50px;
       background: transparent; color: var(--text);
-      font-family: 'DM Sans', sans-serif; font-size: 16px;
-      font-weight: 600; text-decoration: none;
-      border: 1px solid rgba(255,255,255,0.12);
-      transition: all 0.2s;
+      border: 1px solid rgba(255,255,255,0.15);
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+      text-decoration: none; transition: all 0.2s;
     }
-    .hero-cta-ghost:hover { border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.04); }
+    .hero-btn-ghost:hover { border-color: rgba(255,255,255,0.4); }
 
-    .scroll-hint {
-      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-      display: flex; flex-direction: column; align-items: center; gap: 7px;
-      color: var(--muted); font-size: 11px;
-      animation: up 1s 1s ease both;
+    /* ── Right: mini player mockup ── */
+    .hero-right {
+      flex-shrink: 0; width: 320px;
+      opacity: 0; animation: fadeLeft 0.7s 0.5s ease forwards;
     }
-    .scroll-box {
-      width: 22px; height: 36px; border: 2px solid rgba(255,255,255,0.12);
-      border-radius: 11px; display: flex; justify-content: center; padding-top: 6px;
-    }
-    .scroll-inner {
-      width: 3px; height: 7px; border-radius: 2px; background: var(--accent);
-      animation: scrollB 2s ease infinite;
-    }
-    @keyframes scrollB { 0%,100%{transform:translateY(0);opacity:1} 50%{transform:translateY(11px);opacity:0.3} }
-    @keyframes up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeLeft { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
 
-    /* ── TICKER ── */
-    .ticker-wrap {
-      position: relative; z-index: 10;
-      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-      padding: 12px 0; overflow: hidden; background: rgba(14,14,14,0.9);
-    }
-    .ticker {
-      display: flex; gap: 28px;
-      animation: tickerMove 32s linear infinite; width: max-content;
-    }
-    .ticker:hover { animation-play-state: paused; }
-    @keyframes tickerMove { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-    .t-item {
-      display: flex; align-items: center; gap: 8px; white-space: nowrap;
-      color: var(--muted); font-size: 13px; font-weight: 500;
-    }
-    .t-item .d { width: 4px; height: 4px; border-radius: 50%; background: var(--primary); }
-
-    /* ── FEATURES ── */
-    .features {
-      position: relative; z-index: 10;
-      padding: 90px 48px; max-width: 1080px; margin: 0 auto;
-    }
-    .feat-tag {
-      text-align: center; font-size: 11px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.14em;
-      color: var(--accent); margin-bottom: 14px;
-    }
-    .feat-head {
-      text-align: center; font-family: 'Syne', sans-serif;
-      font-size: clamp(26px, 4vw, 44px); font-weight: 800;
-      margin-bottom: 56px; letter-spacing: -1px;
-    }
-    .feat-head span {
-      background: linear-gradient(135deg, var(--accent), #ff6b6b);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    }
-    .feat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
-    @media(max-width:768px) { .feat-grid { grid-template-columns: 1fr; } }
-
-    .feat-card {
+    .mockup-player {
       background: var(--card); border: 1px solid var(--border);
-      border-radius: 14px; padding: 28px;
-      transition: all 0.25s;
-      opacity: 0; transform: translateY(24px);
+      border-radius: 16px; padding: 24px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
     }
-    .feat-card.visible {
-      opacity: 1; transform: translateY(0);
-      transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.25s;
-    }
-    .feat-card:hover { border-color: rgba(225,29,72,0.3); transform: translateY(-3px); }
-    .feat-ic {
-      width: 48px; height: 48px; border-radius: 12px;
+    .mp-cover {
+      width: 100%; aspect-ratio: 1; border-radius: 10px;
+      background: linear-gradient(135deg, #1a2a1a, #0a1a0a, #162416);
       display: flex; align-items: center; justify-content: center;
-      font-size: 22px; margin-bottom: 18px;
-      background: rgba(225,29,72,0.10);
-    }
-    .feat-name { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-    .feat-desc { font-size: 13px; color: var(--text-2); line-height: 1.65; }
-
-    /* ── BOTTOM CTA ── */
-    .bottom-cta {
-      position: relative; z-index: 10;
-      padding: 70px 48px; text-align: center;
-    }
-    .cta-box {
-      max-width: 620px; margin: 0 auto;
-      background: rgba(225,29,72,0.05);
-      border: 1px solid rgba(225,29,72,0.18);
-      border-radius: 20px; padding: 54px 44px;
+      font-size: 72px; margin-bottom: 20px;
       position: relative; overflow: hidden;
     }
-    .cta-box::before {
-      content: ''; position: absolute; top: -1px; left: 10%; right: 10%; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--primary), transparent);
-      opacity: 0.7;
+    .mp-cover::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(24,24,24,0.6) 0%, transparent 50%);
     }
-    .cta-box-title {
-      font-family: 'Syne', sans-serif;
-      font-size: clamp(24px, 3.5vw, 36px);
-      font-weight: 900; margin-bottom: 12px; letter-spacing: -0.5px;
+    .mp-vinyl {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 140px; height: 140px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.05);
+      animation: vinylSpin 8s linear infinite;
     }
-    .cta-box-sub { color: var(--text-2); font-size: 15px; margin-bottom: 32px; }
-    .cta-box-btn {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 16px 42px; border-radius: 6px;
-      background: var(--primary); color: #fff;
-      font-family: 'DM Sans', sans-serif; font-size: 16px;
-      font-weight: 700; text-decoration: none;
-      box-shadow: 0 6px 32px rgba(225,29,72,0.4);
-      transition: all 0.25s;
+    .mp-vinyl::before {
+      content: ''; position: absolute; inset: 12px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.04);
     }
-    .cta-box-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 44px rgba(225,29,72,0.5); }
+    .mp-vinyl-center {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--card); border: 2px solid rgba(255,255,255,0.1);
+    }
+    @keyframes vinylSpin { to { transform: translate(-50%,-50%) rotate(360deg); } }
 
-    /* ── FOOTER ── */
+    .mp-info { margin-bottom: 16px; }
+    .mp-title  { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; margin-bottom: 3px; }
+    .mp-artist { font-size: 13px; color: var(--text-2); }
+
+    .mp-progress { margin-bottom: 16px; }
+    .mp-bar { height: 3px; background: var(--border); border-radius: 3px; margin-bottom: 6px; overflow: hidden; }
+    .mp-fill {
+      height: 100%; width: 38%; background: var(--primary); border-radius: 3px;
+      position: relative;
+    }
+    .mp-fill::after {
+      content: ''; position: absolute; right: -5px; top: -3px;
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--text);
+    }
+    .mp-times { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+
+    .mp-controls { display: flex; align-items: center; justify-content: center; gap: 20px; }
+    .mp-ctrl { font-size: 18px; color: var(--text-2); cursor: default; }
+    .mp-play {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: #000;
+      box-shadow: 0 4px 20px rgba(29,185,84,0.35);
+    }
+
+    /* ── Floating song pills ── */
+    .mp-pills { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+    .mp-pill {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 6px;
+      opacity: 0; animation: pillIn 0.5s ease forwards;
+    }
+    .mp-pill:nth-child(1) { animation-delay: 0.9s; }
+    .mp-pill:nth-child(2) { animation-delay: 1.1s; }
+    .mp-pill:nth-child(3) { animation-delay: 1.3s; }
+    @keyframes pillIn { from{opacity:0;transform:translateY(6px)} to{opacity:0.7;transform:translateY(0)} }
+    .mp-pill-cover {
+      width: 30px; height: 30px; border-radius: 4px;
+      background: linear-gradient(135deg, #162416, #0a1a0a);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .mp-pill-name { font-size: 12px; font-weight: 600; }
+    .mp-pill-artist { font-size: 11px; color: var(--muted); }
+
+    /* ═══ STATS BAR ═══ */
+    .stats-bar {
+      position: relative; z-index: 10;
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .stats-inner {
+      display: flex; max-width: 1200px; margin: 0 auto;
+    }
+    .stat-item {
+      flex: 1; padding: 28px 20px; text-align: center;
+      border-right: 1px solid var(--border);
+      opacity: 0; animation: statIn 0.5s ease forwards;
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-item:nth-child(1) { animation-delay: 0.2s; }
+    .stat-item:nth-child(2) { animation-delay: 0.3s; }
+    .stat-item:nth-child(3) { animation-delay: 0.4s; }
+    .stat-item:nth-child(4) { animation-delay: 0.5s; }
+    @keyframes statIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .stat-num { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 900; color: var(--primary); }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* ═══ FEATURES ═══ */
+    .features {
+      position: relative; z-index: 10;
+      max-width: 1200px; margin: 0 auto; padding: 90px 48px;
+    }
+    .section-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.14em; color: var(--primary); margin-bottom: 12px;
+      opacity: 0;
+    }
+    .section-label.visible { animation: fadeUp 0.5s ease forwards; }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(28px, 3.5vw, 44px); font-weight: 900;
+      margin-bottom: 54px; letter-spacing: -0.5px; line-height: 1.1;
+      opacity: 0;
+    }
+    .section-title.visible { animation: fadeUp 0.5s 0.1s ease forwards; }
+
+    .feat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
+    @media(max-width:900px) { .feat-grid { grid-template-columns: 1fr; } }
+    @media(max-width:600px) { .feat-grid { grid-template-columns: 1fr; } }
+
+    .feat-item {
+      padding: 32px 28px; background: var(--surface);
+      border: 1px solid var(--border);
+      transition: background 0.2s; cursor: default;
+      opacity: 0;
+    }
+    .feat-item:hover { background: var(--card); }
+    .feat-item.visible { animation: fadeUp 0.5s ease forwards; }
+    .feat-item:nth-child(1) { animation-delay: 0.0s; border-radius: 12px 0 0 0; }
+    .feat-item:nth-child(2) { animation-delay: 0.08s; }
+    .feat-item:nth-child(3) { animation-delay: 0.16s; border-radius: 0 12px 0 0; }
+    .feat-item:nth-child(4) { animation-delay: 0.24s; border-radius: 0 0 0 12px; }
+    .feat-item:nth-child(5) { animation-delay: 0.32s; }
+    .feat-item:nth-child(6) { animation-delay: 0.40s; border-radius: 0 0 12px 0; }
+
+    .feat-icon {
+      width: 40px; height: 40px; border-radius: 8px;
+      background: rgba(29,185,84,0.08);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; margin-bottom: 18px;
+    }
+    .feat-name { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+    .feat-desc { font-size: 13px; color: var(--text-2); line-height: 1.65; }
+
+    /* ═══ CTA SECTION ═══ */
+    .cta-section {
+      position: relative; z-index: 10;
+      padding: 0 48px 100px;
+    }
+    .cta-box {
+      max-width: 960px; margin: 0 auto;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 64px 56px;
+      display: flex; align-items: center; gap: 60px;
+      position: relative; overflow: hidden;
+      opacity: 0;
+    }
+    .cta-box.visible { animation: fadeUp 0.6s ease forwards; }
+    .cta-box::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: var(--primary);
+    }
+    .cta-text { flex: 1; }
+    .cta-title { font-family: 'Syne', sans-serif; font-size: clamp(22px, 2.5vw, 32px); font-weight: 900; margin-bottom: 10px; }
+    .cta-desc  { font-size: 15px; color: var(--text-2); line-height: 1.6; }
+    .cta-actions { flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; }
+    .cta-btn-main {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 32px; border-radius: 50px;
+      background: var(--primary); color: #000;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+      text-decoration: none; transition: all 0.2s; white-space: nowrap;
+    }
+    .cta-btn-main:hover { background: var(--accent); transform: scale(1.02); }
+    .cta-btn-ghost {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 13px 28px; border-radius: 50px;
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; transition: all 0.2s; white-space: nowrap;
+    }
+    .cta-btn-ghost:hover { border-color: var(--text-2); }
+
+    /* ═══ FOOTER ═══ */
     footer {
-      position: relative; z-index: 10; padding: 28px 48px;
-      border-top: 1px solid var(--border);
+      position: relative; z-index: 10;
+      border-top: 1px solid var(--border); padding: 28px 48px;
       display: flex; align-items: center; justify-content: space-between;
       color: var(--muted); font-size: 13px;
     }
-    footer a { color: var(--muted); text-decoration: none; }
-    footer a:hover { color: var(--accent); }
+    .footer-logo {
+      font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 900;
+      color: var(--text-2); text-decoration: none;
+    }
+    footer a { color: var(--muted); text-decoration: none; transition: color 0.15s; }
+    footer a:hover { color: var(--text); }
 
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+    @media (max-width: 900px) {
+      nav { padding: 0 20px; }
+      .hero { flex-direction: column; padding: 90px 20px 60px; gap: 40px; }
+      .hero-right { width: 100%; max-width: 360px; margin: 0 auto; }
+      .features { padding: 60px 20px; }
+      .cta-section { padding: 0 20px 60px; }
+      .cta-box { flex-direction: column; gap: 32px; padding: 40px 28px; }
+      footer { padding: 24px 20px; flex-direction: column; gap: 8px; text-align: center; }
+    }
     @media (max-width: 600px) {
-      nav { padding: 0 18px; }
-      .hero { padding: 96px 18px 60px; }
-      .features { padding: 60px 18px; }
-      .bottom-cta { padding: 50px 18px; }
-      .cta-box { padding: 36px 22px; }
-      footer { flex-direction: column; gap: 8px; text-align: center; }
+      .stats-inner { flex-wrap: wrap; }
+      .stat-item { flex: 1 1 50%; border-right: none; border-bottom: 1px solid var(--border); }
     }
   </style>
 </head>
 <body>
 
-<div class="bg-layer"></div>
-<div class="stage" id="stage"></div>
+<div class="glow-spot"></div>
 
 <!-- NAVBAR -->
 <nav>
-  <a class="nav-logo" href="index.html">
-    <div class="nav-logo-icon">🎧</div>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-dot">
+      <svg viewBox="0 0 32 32" width="32" height="32" fill="none">
+        <circle cx="16" cy="16" r="16" fill="#1db954"/>
+        <path d="M8 11.5c4.5-1.4 9.5-1.1 13.4 1.2" stroke="#000" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M8.5 15.8c3.8-1.1 7.7-.8 10.7 1.0" stroke="#000" stroke-width="2.0" stroke-linecap="round"/>
+        <path d="M9.2 19.8c2.8-.8 5.5-.5 7.7 0.7" stroke="#000" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+    </div>
     Listen<span>Me</span>
   </a>
-  <div class="nav-actions">
-    <a href="login.html"  class="nav-btn nav-ghost">Sign In</a>
-    <a href="signup.html" class="nav-btn nav-solid">Get Started</a>
+  <div class="nav-right">
+    <a href="login.html"  class="nav-link">Log in</a>
+    <a href="signup.html" class="nav-btn nav-btn-solid">Sign up free</a>
   </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-chip">
-    <span class="dot"></span>
-    Your personal music space
+  <div class="hero-left">
+    <div class="hero-tag">
+      <span class="hero-tag-line"></span>
+      Premium music experience
+    </div>
+    <h1 class="hero-title">
+      Music for<br/><em>every</em><br/>moment.
+    </h1>
+    <p class="hero-sub">
+      Discover your favourite tracks, build playlists, explore artists — all in one beautiful, distraction-free space.
+    </p>
+    <div class="hero-actions">
+      <a href="login.html" class="hero-btn-main">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+        Start listening
+      </a>
+      <a href="signup.html" class="hero-btn-ghost">
+        Create account →
+      </a>
+    </div>
   </div>
-  <h1 class="hero-title">
-    Music that moves<br/>
-    <span class="line2">your soul</span>
-  </h1>
-  <p class="hero-sub">
-    Stream the full library, discover artists, build your favourites, and lose yourself in the music — anytime, anywhere.
-  </p>
-  <div class="hero-btns">
-    <a href="login.html" class="hero-cta-main">
-      🎧 Start Listening
-    </a>
-    <a href="signup.html" class="hero-cta-ghost">
-      Create account →
-    </a>
-  </div>
-  <div class="scroll-hint">
-    <div class="scroll-box"><div class="scroll-inner"></div></div>
-    <span>Scroll</span>
+
+  <!-- Mini player mockup -->
+  <div class="hero-right">
+    <div class="mockup-player">
+      <div class="mp-cover">
+        🎵
+        <div class="mp-vinyl">
+          <div class="mp-vinyl-center"></div>
+        </div>
+      </div>
+
+      <div class="mp-info">
+        <div class="mp-title">Now Playing</div>
+        <div class="mp-artist">Your favourite track</div>
+      </div>
+
+      <div class="mp-progress">
+        <div class="mp-bar"><div class="mp-fill"></div></div>
+        <div class="mp-times"><span>1:24</span><span>3:47</span></div>
+      </div>
+
+      <div class="mp-controls">
+        <div class="mp-ctrl">⏮</div>
+        <div class="mp-play">▶</div>
+        <div class="mp-ctrl">⏭</div>
+      </div>
+
+      <div class="mp-pills">
+        <div class="mp-pill">
+          <div class="mp-pill-cover">🎸</div>
+          <div>
+            <div class="mp-pill-name">Blinding Lights</div>
+            <div class="mp-pill-artist">The Weeknd</div>
+          </div>
+        </div>
+        <div class="mp-pill">
+          <div class="mp-pill-cover">🎹</div>
+          <div>
+            <div class="mp-pill-name">Anti-Hero</div>
+            <div class="mp-pill-artist">Taylor Swift</div>
+          </div>
+        </div>
+        <div class="mp-pill">
+          <div class="mp-pill-cover">🎤</div>
+          <div>
+            <div class="mp-pill-name">God's Plan</div>
+            <div class="mp-pill-artist">Drake</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- TICKER -->
-<div class="ticker-wrap"><div class="ticker" id="ticker"></div></div>
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="stat-num">HD</div>
+      <div class="stat-label">Audio Quality</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">∞</div>
+      <div class="stat-label">Songs Available</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">0</div>
+      <div class="stat-label">Ads. Ever.</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">Free</div>
+      <div class="stat-label">Always</div>
+    </div>
+  </div>
+</div>
 
 <!-- FEATURES -->
-<section class="features">
-  <div class="feat-tag">Why ListenMe</div>
-  <h2 class="feat-head">Everything you need to <span>enjoy music</span></h2>
+<section class="features" id="features">
+  <div class="section-label">Everything you need</div>
+  <div class="section-title">Built for music lovers.</div>
   <div class="feat-grid">
-    <div class="feat-card">
-      <div class="feat-ic">🎵</div>
-      <div class="feat-name">Curated Library</div>
-      <div class="feat-desc">Every track is hand-picked — no clutter, just great music.</div>
+    <div class="feat-item">
+      <div class="feat-icon">🎵</div>
+      <div class="feat-name">Full-Screen Player</div>
+      <div class="feat-desc">An immersive now-playing view with large album art, waveform progress, and full controls — just like you'd expect.</div>
     </div>
-    <div class="feat-card">
-      <div class="feat-ic">❤️</div>
-      <div class="feat-name">Personal Favourites</div>
-      <div class="feat-desc">Heart your favourite songs and build a collection that's always there.</div>
+    <div class="feat-item">
+      <div class="feat-icon">❤️</div>
+      <div class="feat-name">Favourites</div>
+      <div class="feat-desc">Heart any song with one click. Your favourites are always available in your personal library.</div>
     </div>
-    <div class="feat-card">
-      <div class="feat-ic">🎤</div>
-      <div class="feat-name">Browse by Artist</div>
-      <div class="feat-desc">All songs grouped by artist so you never lose a track.</div>
+    <div class="feat-item">
+      <div class="feat-icon">🕐</div>
+      <div class="feat-name">Recently Played</div>
+      <div class="feat-desc">Jump back into what you were listening to. Your recent history is always one click away.</div>
     </div>
-    <div class="feat-card">
-      <div class="feat-ic">🔀</div>
-      <div class="feat-name">Shuffle & Loop</div>
-      <div class="feat-desc">Shuffle the full library or loop a favourite endlessly.</div>
+    <div class="feat-item">
+      <div class="feat-icon">🎤</div>
+      <div class="feat-name">Artist Profiles</div>
+      <div class="feat-desc">Browse every track grouped by artist. Discover more from the artists you love.</div>
     </div>
-    <div class="feat-card">
-      <div class="feat-ic">🔒</div>
-      <div class="feat-name">Secure & Private</div>
-      <div class="feat-desc">No ads, no tracking — just you and the music you love.</div>
+    <div class="feat-item">
+      <div class="feat-icon">🔀</div>
+      <div class="feat-name">Shuffle & Repeat</div>
+      <div class="feat-desc">Play anything in order, shuffle the whole library, or loop a single track — your choice.</div>
     </div>
-    <div class="feat-card">
-      <div class="feat-ic">🌐</div>
-      <div class="feat-name">Stream Anywhere</div>
-      <div class="feat-desc">High-quality streaming from the cloud. Works on every device.</div>
+    <div class="feat-item">
+      <div class="feat-icon">🔒</div>
+      <div class="feat-name">Private & Ad-Free</div>
+      <div class="feat-desc">No ads, no tracking, no interruptions. Just you and the music you love, every single time.</div>
     </div>
   </div>
 </section>
 
-<!-- BOTTOM CTA -->
-<section class="bottom-cta">
-  <div class="cta-box">
-    <div class="cta-box-title">Ready to start listening?</div>
-    <div class="cta-box-sub">Join ListenMe today — completely free.</div>
-    <a href="login.html" class="cta-box-btn">🎧 Listen Now</a>
-    <div style="margin-top:18px;font-size:13px;color:var(--muted);">
-      Already have an account?
-      <a href="login.html" style="color:var(--accent);text-decoration:none;font-weight:600;"> Sign in →</a>
+<!-- CTA SECTION -->
+<section class="cta-section">
+  <div class="cta-box" id="ctaBox">
+    <div class="cta-text">
+      <div class="cta-title">Ready to start listening?</div>
+      <div class="cta-desc">Join ListenMe for free. No credit card. No ads. No nonsense.</div>
+    </div>
+    <div class="cta-actions">
+      <a href="login.html" class="cta-btn-main">
+        🎧 Listen now
+      </a>
+      <a href="signup.html" class="cta-btn-ghost">
+        Create account
+      </a>
     </div>
   </div>
 </section>
 
 <!-- FOOTER -->
 <footer>
-  <div>
-    <a href="index.html" style="font-weight:800;font-family:'Syne',sans-serif;">🎧 ListenMe</a>
-    &nbsp;· Your music, your world.
+  <a class="footer-logo" href="index.html">🎧 ListenMe</a>
+  <div style="display:flex;gap:20px;">
+    <a href="signup.html">Sign up</a>
+    <a href="login.html">Sign in</a>
   </div>
-  <div>
-    <a href="signup.html">Sign Up</a>
-    &nbsp;·&nbsp;
-    <a href="login.html">Sign In</a>
-  </div>
+  <div>© 2025 ListenMe</div>
 </footer>
 
 <script>
-const SONGS = [
-  {title:'Blinding Lights', artist:'The Weeknd',    e:'🌃'},
-  {title:'Happier Than Ever',artist:'Billie Eilish',e:'🌊'},
-  {title:"God's Plan",      artist:'Drake',          e:'☁️'},
-  {title:'Anti-Hero',       artist:'Taylor Swift',  e:'🎭'},
-  {title:'Sunflower',       artist:'Post Malone',   e:'🌻'},
-  {title:'Kill Bill',       artist:'SZA',            e:'🌸'},
-  {title:'SICKO MODE',      artist:'Travis Scott',  e:'🌀'},
-  {title:'Woman',           artist:'Doja Cat',       e:'🐱'},
-  {title:'positions',       artist:'Ariana Grande', e:'💫'},
-  {title:'lovely',          artist:'Billie Eilish', e:'🖤'},
-];
-const ARTISTS=[
-  {name:'The Weeknd',e:'TW',c:'#e11d48'},
-  {name:'Billie Eilish',e:'BE',c:'#be123c'},
-  {name:'Drake',e:'DR',c:'#9f1239'},
-  {name:'Taylor Swift',e:'TS',c:'#e11d48'},
-  {name:'Post Malone',e:'PM',c:'#be123c'},
-  {name:'SZA',e:'SZ',c:'#9f1239'},
-];
-
-// Floating cards
-const stage=document.getElementById('stage');
-function spawnCard() {
-  const el=document.createElement('div');
-  const r=Math.random();
-  const side=Math.random()<0.5?'left':'right';
-  const xR=side==='left'?[2,26]:[74,97];
-  const x=xR[0]+Math.random()*(xR[1]-xR[0]);
-  const y=15+Math.random()*70;
-  const dy=-(160+Math.random()*240)+'px';
-  const r0=(Math.random()-0.5)*14+'deg';
-  const r1=(Math.random()-0.5)*20+'deg';
-  const dur=18+Math.random()*20;
-  const del=Math.random()*18;
-  const mo=0.22+Math.random()*0.30;
-  el.style.setProperty('--dy',dy);
-  el.style.setProperty('--r0',r0);
-  el.style.setProperty('--r1',r1);
-  el.style.setProperty('--mo',mo);
-  el.style.left=x+'vw'; el.style.top=y+'vh';
-  el.style.animationDuration=dur+'s'; el.style.animationDelay=del+'s';
-
-  if(r<0.45){
-    el.className='fc cover';
-    const s=SONGS[Math.floor(Math.random()*SONGS.length)];
-    el.innerHTML=`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:34px;background:linear-gradient(135deg,#1a0a0f,#0f0808)">${s.e}</div>`;
-  } else if(r<0.75){
-    el.className='fc circle';
-    const a=ARTISTS[Math.floor(Math.random()*ARTISTS.length)];
-    el.innerHTML=`<div style="width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;font-family:'Syne',sans-serif;background:${a.c};">${a.e}</div>`;
-  } else {
-    el.className='fc pill';
-    const s=SONGS[Math.floor(Math.random()*SONGS.length)];
-    el.innerHTML=`<div style="width:32px;height:32px;border-radius:7px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px;background:linear-gradient(135deg,#1a0a0f,#0f0808)">${s.e}</div><div class="fc-text"><div class="fc-t">${s.title}</div><div class="fc-a">${s.artist}</div></div><div class="fc-play">▶</div>`;
+  // Redirect if already logged in
+  if (localStorage.getItem('token')) {
+    document.querySelector('.nav-right').innerHTML =
+      '<a href="play.html" class="nav-btn nav-btn-solid">Open App →</a>';
   }
-  stage.appendChild(el);
-  setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); },(dur+del+2)*1000);
-}
-function spawnBatch() {
-  const n=window.innerWidth<600?10:20;
-  for(let i=0;i<n;i++) spawnCard();
-}
-spawnBatch(); setInterval(spawnBatch,22000);
 
-// Ticker
-const tickItems=[
-  ...SONGS.map(s=>`${s.e} ${s.title} — ${s.artist}`),
-  '🎧 Stream anytime','❤️ Save favourites','🔀 Shuffle mode','🎤 Browse artists','🔒 Ad-free'
-];
-const ticker=document.getElementById('ticker');
-const doubled=[...tickItems,...tickItems];
-ticker.innerHTML=doubled.map(t=>`<div class="t-item"><span class="d"></span>${t}</div>`).join('');
+  // Scroll-triggered animations
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
 
-// Scroll reveal
-const obs=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{
-    if(e.isIntersecting){
-      document.querySelectorAll('.feat-card').forEach((c,i)=>setTimeout(()=>c.classList.add('visible'),i*90));
-      obs.disconnect();
-    }
+  document.querySelectorAll('.section-label, .section-title, .feat-item, .cta-box').forEach(el => {
+    observer.observe(el);
   });
-},{threshold:0.1});
-obs.observe(document.querySelector('.feat-grid'));
 
-// If already logged in
-if(localStorage.getItem('token')){
-  document.querySelector('.hero-cta-main').href='play.html';
-  document.querySelector('.cta-box-btn').href='play.html';
-  document.querySelector('.nav-solid').href='play.html';
-  document.querySelector('.nav-solid').textContent='Open App';
-}
+  // Animated vinyl spin controls (pauses if user prefers reduced motion)
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelector('.mp-vinyl')?.style.setProperty('animation', 'none');
+  }
 </script>
 </body>
 </html>
