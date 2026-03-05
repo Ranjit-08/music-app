@@ -60,69 +60,106 @@ def get_db():
     )
 
 def init_db():
+    """Create all tables if they don't exist yet."""
     conn = get_db()
-    with conn.cursor() as c:
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id         INT AUTO_INCREMENT PRIMARY KEY,
-                email      VARCHAR(255) UNIQUE NOT NULL,
-                password   VARCHAR(255) NOT NULL,
-                name       VARCHAR(255) NOT NULL,
-                is_admin   BOOLEAN DEFAULT FALSE,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                verified   BOOLEAN DEFAULT FALSE
-            )
-        """)
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS otp_codes (
-                id         INT AUTO_INCREMENT PRIMARY KEY,
-                email      VARCHAR(255) NOT NULL,
-                code       VARCHAR(10)  NOT NULL,
-                expires_at DATETIME NOT NULL,
-                used       BOOLEAN DEFAULT FALSE,
-                INDEX idx_email (email)
-            )
-        """)
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS songs (
-                id           INT AUTO_INCREMENT PRIMARY KEY,
-                user_id      INT NOT NULL,
-                title        VARCHAR(255) NOT NULL,
-                artist       VARCHAR(255) NOT NULL,
-                album        VARCHAR(255),
-                genre        VARCHAR(100),
-                s3_key       VARCHAR(500) NOT NULL,
-                cover_s3_key VARCHAR(500),
-                duration     INT DEFAULT 0,
-                file_size    BIGINT DEFAULT 0,
-                play_count   INT DEFAULT 0,
-                uploaded_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        """)
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS favorites (
-                id      INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
-                song_id INT NOT NULL,
-                added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE KEY uq_user_song (user_id, song_id),
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
-            )
-        """)
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS password_reset_tokens (
-                id         INT AUTO_INCREMENT PRIMARY KEY,
-                email      VARCHAR(255) NOT NULL,
-                token      VARCHAR(255) NOT NULL UNIQUE,
-                expires_at DATETIME NOT NULL,
-                used       BOOLEAN DEFAULT FALSE,
-                INDEX idx_token (token),
-                INDEX idx_email (email)
-            )
-        """)
-    conn.close()
+    try:
+        with conn.cursor() as c:
+            # Users
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id         INT AUTO_INCREMENT PRIMARY KEY,
+                    email      VARCHAR(255) UNIQUE NOT NULL,
+                    password   VARCHAR(255) NOT NULL,
+                    name       VARCHAR(255) NOT NULL,
+                    is_admin   TINYINT(1) DEFAULT 0,
+                    verified   TINYINT(1) DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+
+            # OTP codes (email verification & 2FA)
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS otp_codes (
+                    id         INT AUTO_INCREMENT PRIMARY KEY,
+                    email      VARCHAR(255) NOT NULL,
+                    code       VARCHAR(10)  NOT NULL,
+                    used       TINYINT(1) DEFAULT 0,
+                    expires_at DATETIME NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_email (email)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+
+            # Password reset tokens
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id         INT AUTO_INCREMENT PRIMARY KEY,
+                    email      VARCHAR(255) NOT NULL,
+                    token      VARCHAR(128) UNIQUE NOT NULL,
+                    used       TINYINT(1) DEFAULT 0,
+                    expires_at DATETIME NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_token (token),
+                    INDEX idx_email (email)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+
+            # Songs  — cover_s3_key stores the S3 key for the cover image
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS songs (
+                    id            INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id       INT NOT NULL,
+                    title         VARCHAR(255) NOT NULL,
+                    artist        VARCHAR(255) NOT NULL DEFAULT 'Unknown Artist',
+                    album         VARCHAR(255),
+                    genre         VARCHAR(100),
+                    s3_key        VARCHAR(512) NOT NULL,
+                    cover_s3_key  VARCHAR(512),
+                    duration      FLOAT,
+                    file_size     BIGINT DEFAULT 0,
+                    play_count    INT DEFAULT 0,
+                    uploaded_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_artist (artist),
+                    INDEX idx_genre  (genre)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+
+            # Add cover_s3_key column if it doesn't exist (migration for old installs)
+            try:
+                c.execute("""
+                    ALTER TABLE songs ADD COLUMN cover_s3_key VARCHAR(512) AFTER s3_key
+                """)
+            except Exception:
+                pass  # column already exists
+
+            # Favorites
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS favorites (
+                    id         INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id    INT NOT NULL,
+                    song_id    INT NOT NULL,
+                    added_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_user_song (user_id, song_id),
+                    INDEX idx_user_id (user_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+
+            # Recently played — per-user history (last 50 per user)
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS recently_played (
+                    id         INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id    INT NOT NULL,
+                    song_id    INT NOT NULL,
+                    played_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_user_played (user_id, played_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+
+        print("Database initialised OK")
+    except Exception as e:
+        print(f"init_db error: {e}")
+    finally:
+        conn.close()
 
 # ─── S3 ────────────────────────────────────────────────────────────────────────
 def get_s3():
@@ -181,17 +218,17 @@ def admin_required(f):
 def _email_base(content):
     return f"""
     <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:auto;
-                background:#0d0d18;color:#e2e8f0;border-radius:16px;overflow:hidden;">
-      <div style="background:linear-gradient(135deg,#7c3aed,#ec4899);padding:32px 40px;">
+                background:#111;color:#e2e8f0;border-radius:16px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#1db954,#17a349);padding:32px 40px;">
         <h1 style="margin:0;font-size:26px;font-weight:900;letter-spacing:-0.5px;color:#fff;">
           🎧 ListenMe
         </h1>
-        <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.7);">
+        <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.75);">
           Your personal music streaming space
         </p>
       </div>
       <div style="padding:36px 40px;">{content}</div>
-      <div style="padding:20px 40px;border-top:1px solid #1e1e2e;font-size:12px;color:#475569;">
+      <div style="padding:20px 40px;border-top:1px solid #222;font-size:12px;color:#555;">
         ListenMe · Secure · Private · Yours
       </div>
     </div>
@@ -234,12 +271,12 @@ def signup():
         content = f"""
           <p style="font-size:18px;font-weight:700;margin:0 0 8px;">Welcome to ListenMe, {name}! 🎶</p>
           <p style="color:#94a3b8;margin:0 0 28px;">Please verify your email to start listening.</p>
-          <div style="background:#14141f;border:1px solid #1e1e2e;border-radius:12px;
+          <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
                       padding:28px;text-align:center;margin-bottom:28px;">
             <p style="color:#64748b;margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:2px;">
               Verification Code
             </p>
-            <div style="font-size:42px;font-weight:900;letter-spacing:14px;color:#a78bfa;">{otp}</div>
+            <div style="font-size:42px;font-weight:900;letter-spacing:14px;color:#1db954;">{otp}</div>
           </div>
           <p style="color:#475569;font-size:13px;">Expires in 10 minutes.</p>
         """
@@ -263,7 +300,7 @@ def verify_email():
             c.execute("""
                 SELECT id FROM otp_codes
                 WHERE email=%s AND code=%s AND used=FALSE AND expires_at > NOW()
-                ORDER BY id DESC LIMIT 1
+                ORDER BY created_at DESC LIMIT 1
             """, (email, code))
             otp_row = c.fetchone()
             if not otp_row:
@@ -274,31 +311,69 @@ def verify_email():
             c.execute("SELECT id, email, name, is_admin FROM users WHERE email=%s", (email,))
             user = c.fetchone()
 
-            token = jwt.encode({
-                'user_id':  user['id'],
-                'email':    user['email'],
-                'is_admin': bool(user['is_admin']),
-                'exp':      datetime.datetime.utcnow() + datetime.timedelta(days=30)
-            }, app.config['SECRET_KEY'], algorithm='HS256')
+        token = jwt.encode({
+            'user_id':  user['id'],
+            'email':    user['email'],
+            'is_admin': bool(user['is_admin']),
+            'exp':      datetime.datetime.utcnow() + datetime.timedelta(days=30)
+        }, app.config['SECRET_KEY'], algorithm='HS256')
 
-            return jsonify({
-                'message': 'Email verified!', 'token': token,
-                'user': {'id': user['id'], 'email': user['email'],
-                         'name': user['name'], 'is_admin': bool(user['is_admin'])}
-            }), 200
+        return jsonify({
+            'token': token,
+            'user':  {'id': user['id'], 'email': user['email'],
+                      'name': user['name'], 'is_admin': bool(user['is_admin'])}
+        }), 200
+    finally:
+        conn.close()
+
+
+@app.route('/api/auth/resend-otp', methods=['POST'])
+def resend_otp():
+    data  = request.get_json()
+    email = data.get('email', '').strip().lower()
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as c:
+            c.execute("SELECT id, name, verified FROM users WHERE email=%s", (email,))
+            user = c.fetchone()
+            if not user:
+                return jsonify({'error': 'Email not found'}), 404
+            if user['verified']:
+                return jsonify({'error': 'Email already verified'}), 400
+
+            otp     = generate_otp()
+            expires = datetime.datetime.utcnow() + datetime.timedelta(minutes=10)
+            c.execute("UPDATE otp_codes SET used=TRUE WHERE email=%s", (email,))
+            c.execute("INSERT INTO otp_codes (email, code, expires_at) VALUES (%s,%s,%s)",
+                      (email, otp, expires))
+
+        content = f"""
+          <p style="font-size:18px;font-weight:700;margin:0 0 8px;">New verification code</p>
+          <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
+                      padding:28px;text-align:center;margin-bottom:28px;">
+            <p style="color:#64748b;margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:2px;">
+              Verification Code
+            </p>
+            <div style="font-size:42px;font-weight:900;letter-spacing:14px;color:#1db954;">{otp}</div>
+          </div>
+          <p style="color:#475569;font-size:13px;">Expires in 10 minutes.</p>
+        """
+        msg = Message('Your new ListenMe verification code', recipients=[email])
+        msg.html = _email_base(content)
+        mail.send(msg)
+        return jsonify({'message': 'New code sent.'}), 200
     finally:
         conn.close()
 
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    """Direct login — email + password only. OTP is only for new account signup."""
     data     = request.get_json()
     email    = data.get('email', '').strip().lower()
     password = data.get('password', '')
-
-    if not email or not password:
-        return jsonify({'error': 'Email and password are required'}), 400
 
     conn = get_db()
     try:
@@ -307,62 +382,46 @@ def login():
             user = c.fetchone()
             if not user or user['password'] != hash_password(password):
                 return jsonify({'error': 'Invalid email or password'}), 401
+
             if not user['verified']:
-                return jsonify({'error': 'Email not verified. Please complete signup first.', 'needs_verify': True}), 403
+                # Re-send OTP
+                otp     = generate_otp()
+                expires = datetime.datetime.utcnow() + datetime.timedelta(minutes=10)
+                c.execute("UPDATE otp_codes SET used=TRUE WHERE email=%s", (email,))
+                c.execute("INSERT INTO otp_codes (email, code, expires_at) VALUES (%s,%s,%s)",
+                          (email, otp, expires))
+                content = f"""
+                  <p style="font-size:18px;font-weight:700;margin:0 0 8px;">Verify your account</p>
+                  <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
+                              padding:28px;text-align:center;margin-bottom:28px;">
+                    <div style="font-size:42px;font-weight:900;letter-spacing:14px;color:#1db954;">{otp}</div>
+                  </div>
+                  <p style="color:#475569;font-size:13px;">Expires in 10 minutes.</p>
+                """
+                msg = Message('Verify your ListenMe account', recipients=[email])
+                msg.html = _email_base(content)
+                try:
+                    mail.send(msg)
+                except Exception:
+                    pass
+                return jsonify({'error': 'verify_required', 'email': email}), 403
+
+            # Update admin flag from env in case it changed
+            is_admin_now = (email == ADMIN_EMAIL) if ADMIN_EMAIL else bool(user['is_admin'])
+            if is_admin_now != bool(user['is_admin']):
+                c.execute("UPDATE users SET is_admin=%s WHERE id=%s", (is_admin_now, user['id']))
 
             token = jwt.encode({
                 'user_id':  user['id'],
                 'email':    user['email'],
-                'is_admin': bool(user['is_admin']),
-                'exp':      datetime.datetime.utcnow() + datetime.timedelta(days=30)
-            }, app.config['SECRET_KEY'], algorithm='HS256')
-
-            return jsonify({
-                'token': token,
-                'user':  {
-                    'id':       user['id'],
-                    'email':    user['email'],
-                    'name':     user['name'],
-                    'is_admin': bool(user['is_admin'])
-                }
-            }), 200
-    finally:
-        conn.close()
-
-
-@app.route('/api/auth/verify-login', methods=['POST'])
-def verify_login():
-    data  = request.get_json()
-    email = data.get('email', '').strip().lower()
-    code  = data.get('code', '').strip()
-
-    conn = get_db()
-    try:
-        with conn.cursor() as c:
-            c.execute("""
-                SELECT id FROM otp_codes
-                WHERE email=%s AND code=%s AND used=FALSE AND expires_at > NOW()
-                ORDER BY id DESC LIMIT 1
-            """, (email, code))
-            otp_row = c.fetchone()
-            if not otp_row:
-                return jsonify({'error': 'Invalid or expired code'}), 400
-
-            c.execute("UPDATE otp_codes SET used=TRUE WHERE id=%s", (otp_row['id'],))
-            c.execute("SELECT id, email, name, is_admin FROM users WHERE email=%s", (email,))
-            user = c.fetchone()
-
-            token = jwt.encode({
-                'user_id':  user['id'],
-                'email':    user['email'],
-                'is_admin': bool(user['is_admin']),
+                'is_admin': is_admin_now,
                 'exp':      datetime.datetime.utcnow() + datetime.timedelta(days=30)
             }, app.config['SECRET_KEY'], algorithm='HS256')
 
             return jsonify({
                 'token': token,
                 'user':  {'id': user['id'], 'email': user['email'],
-                          'name': user['name'], 'is_admin': bool(user['is_admin'])}
+                          'name': user['name'], 'is_admin': is_admin_now}
             }), 200
     finally:
         conn.close()
@@ -415,11 +474,11 @@ def forgot_password():
                 content = f"""
                   <p style="font-size:18px;font-weight:700;margin:0 0 8px;">Reset your password</p>
                   <p style="color:#94a3b8;margin:0 0 28px;">
-                    Hi {user['name']}, we received a request to reset your password.
+                    Hi {user['name']}, click below to reset your password.
                   </p>
                   <div style="text-align:center;margin:32px 0;">
                     <a href="{reset_link}"
-                       style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;
+                       style="background:#1db954;color:#000;
                               padding:16px 40px;border-radius:50px;text-decoration:none;
                               font-weight:700;font-size:16px;display:inline-block;">
                       Reset My Password →
@@ -485,7 +544,7 @@ def verify_reset_token():
         conn.close()
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  SONGS — ADMIN UPLOAD
+#  SONGS — ADMIN UPLOAD  (cover image fix is here)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route('/api/songs/upload', methods=['POST'])
@@ -500,10 +559,10 @@ def upload_song():
     album      = request.form.get('album', '').strip()
     genre      = request.form.get('genre', '').strip()
 
-    allowed = {'mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'}
+    allowed_audio = {'mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'}
     ext = audio_file.filename.rsplit('.', 1)[-1].lower() if '.' in audio_file.filename else ''
-    if ext not in allowed:
-        return jsonify({'error': f'Unsupported format. Allowed: {", ".join(allowed)}'}), 400
+    if ext not in allowed_audio:
+        return jsonify({'error': f'Unsupported audio format. Allowed: {", ".join(allowed_audio)}'}), 400
 
     s3        = get_s3()
     audio_key = f"songs/{uuid.uuid4()}.{ext}"
@@ -512,22 +571,39 @@ def upload_song():
         audio_file.seek(0, 2)
         file_size = audio_file.tell()
         audio_file.seek(0)
-        s3.upload_fileobj(audio_file, S3_BUCKET, audio_key,
-                          ExtraArgs={'ContentType': f'audio/{ext}'})
+        s3.upload_fileobj(
+            audio_file, S3_BUCKET, audio_key,
+            ExtraArgs={'ContentType': f'audio/{ext}', 'ContentDisposition': 'inline'}
+        )
     except NoCredentialsError:
-        return jsonify({'error': 'AWS credentials error'}), 500
+        return jsonify({'error': 'AWS credentials error — check S3 config'}), 500
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Audio upload failed: {str(e)}'}), 500
 
+    # ── Cover image upload ─────────────────────────────────────────────────────
     cover_key = None
-    if 'cover' in request.files:
-        cover_file = request.files['cover']
-        if cover_file.filename:
-            c_ext = cover_file.filename.rsplit('.', 1)[-1].lower()
-            if c_ext in {'jpg', 'jpeg', 'png', 'webp'}:
-                cover_key = f"covers/{uuid.uuid4()}.{c_ext}"
-                s3.upload_fileobj(cover_file, S3_BUCKET, cover_key,
-                                  ExtraArgs={'ContentType': f'image/{c_ext}'})
+    cover_file = request.files.get('cover')
+    if cover_file and cover_file.filename:
+        c_ext = cover_file.filename.rsplit('.', 1)[-1].lower() if '.' in cover_file.filename else ''
+        allowed_img = {'jpg', 'jpeg', 'png', 'webp', 'gif'}
+        if c_ext in allowed_img:
+            cover_key = f"covers/{uuid.uuid4()}.{c_ext}"
+            content_type_map = {
+                'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
+                'png': 'image/png',  'webp': 'image/webp', 'gif': 'image/gif'
+            }
+            try:
+                s3.upload_fileobj(
+                    cover_file, S3_BUCKET, cover_key,
+                    ExtraArgs={
+                        'ContentType': content_type_map.get(c_ext, 'image/jpeg'),
+                        'ContentDisposition': 'inline'
+                    }
+                )
+            except Exception as e:
+                # Cover upload failed — don't block the whole upload
+                cover_key = None
+                print(f"Cover upload warning: {e}")
 
     conn = get_db()
     try:
@@ -537,27 +613,39 @@ def upload_song():
                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
             """, (request.user_id, title, artist, album, genre, audio_key, cover_key, file_size))
             song_id = c.lastrowid
-        return jsonify({'message': 'Song uploaded successfully!', 'song_id': song_id}), 201
+        return jsonify({
+            'message': 'Song uploaded successfully!',
+            'song_id': song_id,
+            'has_cover': cover_key is not None
+        }), 201
     finally:
         conn.close()
 
 
 def _presign_songs(songs):
-    """Add audio_url and cover_url to a list of song dicts."""
+    """Add audio_url and cover_url (pre-signed S3 URLs) to a list of song dicts."""
     s3 = get_s3()
     for song in songs:
-        song['audio_url'] = s3.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': S3_BUCKET, 'Key': song['s3_key']},
-            ExpiresIn=3600
-        )
-        song['cover_url'] = None
-        if song.get('cover_s3_key'):
-            song['cover_url'] = s3.generate_presigned_url(
+        try:
+            song['audio_url'] = s3.generate_presigned_url(
                 'get_object',
-                Params={'Bucket': S3_BUCKET, 'Key': song['cover_s3_key']},
+                Params={'Bucket': S3_BUCKET, 'Key': song['s3_key']},
                 ExpiresIn=3600
             )
+        except Exception:
+            song['audio_url'] = None
+
+        song['cover_url'] = None
+        if song.get('cover_s3_key'):
+            try:
+                song['cover_url'] = s3.generate_presigned_url(
+                    'get_object',
+                    Params={'Bucket': S3_BUCKET, 'Key': song['cover_s3_key']},
+                    ExpiresIn=3600
+                )
+            except Exception:
+                song['cover_url'] = None
+
         if song.get('uploaded_at') and not isinstance(song['uploaded_at'], str):
             song['uploaded_at'] = song['uploaded_at'].isoformat()
     return songs
@@ -589,7 +677,7 @@ def get_songs():
                 """)
             songs = c.fetchall()
 
-            # Get user's favorites as a set for quick lookup
+            # Get user's favorites for quick lookup
             c.execute("SELECT song_id FROM favorites WHERE user_id=%s", (request.user_id,))
             fav_ids = {row['song_id'] for row in c.fetchall()}
 
@@ -619,14 +707,16 @@ def get_artists():
 
         s3 = get_s3()
         for a in artists:
+            a['cover_url'] = None
             if a.get('cover_s3_key'):
-                a['cover_url'] = s3.generate_presigned_url(
-                    'get_object',
-                    Params={'Bucket': S3_BUCKET, 'Key': a['cover_s3_key']},
-                    ExpiresIn=3600
-                )
-            else:
-                a['cover_url'] = None
+                try:
+                    a['cover_url'] = s3.generate_presigned_url(
+                        'get_object',
+                        Params={'Bucket': S3_BUCKET, 'Key': a['cover_s3_key']},
+                        ExpiresIn=3600
+                    )
+                except Exception:
+                    pass
         return jsonify({'artists': artists}), 200
     finally:
         conn.close()
@@ -696,7 +786,56 @@ def increment_play(song_id):
     try:
         with conn.cursor() as c:
             c.execute("UPDATE songs SET play_count = play_count + 1 WHERE id=%s", (song_id,))
+            # Track recently played
+            c.execute("""
+                INSERT INTO recently_played (user_id, song_id)
+                VALUES (%s, %s)
+            """, (request.user_id, song_id))
+            # Keep only last 50 entries per user
+            c.execute("""
+                DELETE FROM recently_played
+                WHERE user_id = %s
+                  AND id NOT IN (
+                    SELECT id FROM (
+                        SELECT id FROM recently_played
+                        WHERE user_id = %s
+                        ORDER BY played_at DESC
+                        LIMIT 50
+                    ) t
+                  )
+            """, (request.user_id, request.user_id))
         return jsonify({'ok': True}), 200
+    finally:
+        conn.close()
+
+
+@app.route('/api/songs/recently-played', methods=['GET'])
+@token_required
+def get_recently_played():
+    """Return distinct recently played songs for the logged-in user (last 20)."""
+    conn = get_db()
+    try:
+        with conn.cursor() as c:
+            c.execute("""
+                SELECT s.id, s.title, s.artist, s.album, s.genre,
+                       s.s3_key, s.cover_s3_key, s.duration, s.file_size,
+                       s.play_count, s.uploaded_at
+                FROM recently_played rp
+                JOIN songs s ON s.id = rp.song_id
+                WHERE rp.user_id = %s
+                GROUP BY s.id
+                ORDER BY MAX(rp.played_at) DESC
+                LIMIT 20
+            """, (request.user_id,))
+            songs = c.fetchall()
+
+            c.execute("SELECT song_id FROM favorites WHERE user_id=%s", (request.user_id,))
+            fav_ids = {row['song_id'] for row in c.fetchall()}
+
+        songs = _presign_songs(songs)
+        for song in songs:
+            song['is_favorite'] = song['id'] in fav_ids
+        return jsonify({'songs': songs}), 200
     finally:
         conn.close()
 
@@ -712,9 +851,17 @@ def delete_song(song_id):
             if not song:
                 return jsonify({'error': 'Song not found'}), 404
             s3 = get_s3()
-            s3.delete_object(Bucket=S3_BUCKET, Key=song['s3_key'])
-            if song['cover_s3_key']:
-                s3.delete_object(Bucket=S3_BUCKET, Key=song['cover_s3_key'])
+            try:
+                s3.delete_object(Bucket=S3_BUCKET, Key=song['s3_key'])
+            except Exception:
+                pass
+            if song.get('cover_s3_key'):
+                try:
+                    s3.delete_object(Bucket=S3_BUCKET, Key=song['cover_s3_key'])
+                except Exception:
+                    pass
+            c.execute("DELETE FROM favorites WHERE song_id=%s", (song_id,))
+            c.execute("DELETE FROM recently_played WHERE song_id=%s", (song_id,))
             c.execute("DELETE FROM songs WHERE id=%s", (song_id,))
         return jsonify({'message': 'Song deleted'}), 200
     finally:
@@ -724,7 +871,7 @@ def delete_song(song_id):
 @app.route('/api/songs/my', methods=['GET'])
 @token_required
 def my_songs():
-    """Admin: all songs. Regular user: returns empty (no-op for backward compat)."""
+    """Admin: all songs with cover URLs for library management."""
     conn = get_db()
     try:
         with conn.cursor() as c:
@@ -745,12 +892,15 @@ def health():
     return jsonify({'status': 'ok', 'app': 'ListenMe'}), 200
 
 
+# ── Run init_db at startup (works with both gunicorn and direct python) ─────────
+if not os.environ.get('APP_URL'):
+    print("WARNING: APP_URL not set — password reset links will be broken!")
+if not ADMIN_EMAIL:
+    print("WARNING: ADMIN_EMAIL not set — no one can upload music!")
+else:
+    print(f"Admin email: {ADMIN_EMAIL}")
+
+init_db()
+
 if __name__ == '__main__':
-    if not os.environ.get('APP_URL'):
-        print("WARNING: APP_URL not set — password reset links will be broken!")
-    if not ADMIN_EMAIL:
-        print("WARNING: ADMIN_EMAIL not set — no one can upload music!")
-    else:
-        print(f"Admin email: {ADMIN_EMAIL}")
-    init_db()
     app.run(host='0.0.0.0', port=5000, debug=False)
