@@ -6,192 +6,189 @@
   <title>Upload Music — ListenMe</title>
   <link rel="stylesheet" href="shared.css" />
   <style>
-    .upload-wrap {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 28px; align-items: start;
-    }
-    @media (max-width: 768px) { .upload-wrap { grid-template-columns: 1fr; } }
+    .upload-wrap { display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:start; }
+    @media(max-width:768px){ .upload-wrap{grid-template-columns:1fr;} }
 
-    /* ── Access denied ── */
-    .access-denied {
-      text-align: center; padding: 100px 20px;
-      animation: fadeInUp 0.5s ease both;
-    }
-    .access-denied .ad-icon { font-size: 64px; margin-bottom: 20px; }
-    .access-denied h2 { font-family: var(--font-display); font-size: 26px; margin-bottom: 8px; }
-    .access-denied p  { color: var(--text-2); margin-bottom: 24px; }
+    .access-denied { text-align:center; padding:100px 20px; }
+    .access-denied .ad-icon { font-size:64px; margin-bottom:20px; }
+    .access-denied h2 { font-size:26px; margin-bottom:8px; }
+    .access-denied p { color:var(--text-2); margin-bottom:24px; }
 
-    /* ── Drop zone ── */
     .drop-zone {
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 50px 28px; text-align: center;
-      cursor: pointer; transition: all 0.25s;
-      background: var(--card); position: relative;
+      border:2px dashed var(--border); border-radius:var(--radius);
+      padding:50px 28px; text-align:center; cursor:pointer;
+      transition:all .25s; background:var(--card); position:relative; overflow:hidden;
     }
-    .drop-zone:hover, .drop-zone.dragover {
-      border-color: var(--primary);
-      background: rgba(225,29,72,0.04);
-      box-shadow: 0 0 40px rgba(225,29,72,0.08);
-    }
+    .drop-zone:hover,.drop-zone.dragover { border-color:var(--green); background:rgba(29,185,84,.06); }
     .drop-zone input[type=file] {
-      position: absolute; inset: 0; opacity: 0;
-      cursor: pointer; width: 100%; height: 100%;
+      position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; z-index:5;
     }
-    .drop-icon  { font-size: 48px; margin-bottom: 14px; transition: transform 0.25s; }
-    .drop-zone:hover .drop-icon { transform: translateY(-5px); }
-    .drop-title { font-family: var(--font-display); font-size: 17px; font-weight: 700; margin-bottom: 6px; }
-    .drop-sub   { color: var(--text-2); font-size: 12px; }
+    .dz-icon { font-size:40px; margin-bottom:14px; pointer-events:none; }
+    .dz-main { font-size:15px; font-weight:700; margin-bottom:4px; pointer-events:none; }
+    .dz-sub  { font-size:13px; color:var(--text-2); pointer-events:none; }
 
-    /* ── Selected file ── */
-    .file-selected {
-      display: none;
-      background: rgba(225,29,72,0.06);
-      border: 1px solid rgba(225,29,72,0.2);
-      border-radius: var(--radius-sm);
-      padding: 14px 16px; margin-top: 14px;
-      animation: fadeInUp 0.3s ease both;
+    .file-preview {
+      display:none; margin-top:12px; padding:12px 14px;
+      background:var(--elevated); border-radius:var(--radius-sm); text-align:left;
     }
-    .file-name { font-weight: 700; font-size: 14px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .file-size { color: var(--text-2); font-size: 12px; }
+    .fp-name { font-weight:600; font-size:13px; word-break:break-all; }
+    .fp-size { font-size:12px; color:var(--text-2); margin-top:2px; }
 
-    /* ── Progress ── */
-    .prog-wrap  { display: none; background: var(--border); border-radius: 50px; height: 5px; margin-top: 16px; overflow: hidden; }
-    .prog-fill  { height: 100%; background: var(--primary); border-radius: 50px; width: 0%; transition: width 0.3s; }
-    .prog-label { display: none; font-size: 12px; color: var(--text-2); margin-top: 6px; }
+    .prog-wrap { display:none; margin-top:12px; height:4px; background:var(--border); border-radius:50px; overflow:hidden; }
+    .prog-fill { height:100%; background:var(--green); border-radius:50px; width:0%; transition:width .3s; }
+    .prog-label { display:none; font-size:12px; color:var(--text-2); margin-top:6px; }
 
-    /* ── Metadata card ── */
-    .meta-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 24px;
+    .meta-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:24px; }
+
+    /* ═══ COVER ZONE — label wraps the whole box so clicking anywhere triggers file input ═══ */
+    .cover-label {
+      display:block; cursor:pointer;
+      border:2px dashed var(--border); border-radius:var(--radius-sm);
+      height:200px; position:relative; overflow:hidden;
+      background:var(--surface); transition:border-color .2s; margin-bottom:8px;
     }
+    .cover-label:hover { border-color:var(--green); }
 
-    /* ── Cover zone ── */
-    .cover-zone {
-      border: 2px dashed var(--border); border-radius: var(--radius-sm);
-      height: 180px; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      cursor: pointer; position: relative; overflow: hidden;
-      transition: border-color 0.2s; background: var(--surface);
+    /* Real file input is HIDDEN — label click triggers it automatically */
+    #coverFile { display:none; }
+
+    .cover-preview {
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover; display:none;
     }
-    .cover-zone:hover { border-color: var(--primary); }
-    .cover-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-    .cover-preview { position: absolute; inset: 0; object-fit: cover; width: 100%; height: 100%; display: none; }
+    .cover-placeholder {
+      position:absolute; inset:0;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    }
+    .cover-placeholder-icon { font-size:36px; }
+    .cover-placeholder-text { font-size:13px; color:var(--text-2); }
     .cover-change-ov {
-      position: absolute; inset: 0; background: rgba(0,0,0,0.6);
-      display: none; align-items: center; justify-content: center;
-      font-size: 13px; color: #fff; gap: 5px;
+      position:absolute; inset:0; background:rgba(0,0,0,.55);
+      display:none; align-items:center; justify-content:center;
+      font-size:13px; color:#fff; gap:6px;
     }
-    .cover-zone:hover .cover-change-ov { display: flex; }
+    .has-cover .cover-change-ov { display:none; }
+    .cover-label:hover .cover-change-ov { display:flex !important; }
 
-    /* ── Catalog ── */
-    .catalog { margin-top: 48px; }
-    .cat-hdr {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 20px;
+    /* Catalog */
+    .catalog { margin-top:48px; }
+    .cat-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+    .cat-title { font-size:20px; font-weight:800; }
+    .song-table { width:100%; border-collapse:collapse; }
+    .song-table th {
+      text-align:left; font-size:11px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; color:var(--text-2); padding:0 12px 12px;
+      border-bottom:1px solid var(--border);
     }
-    .cat-title { font-family: var(--font-display); font-size: 20px; font-weight: 800; }
-
-    .song-item {
-      display: flex; align-items: center; gap: 14px;
-      padding: 13px 16px; background: var(--card);
-      border: 1px solid var(--border); border-radius: var(--radius-sm);
-      margin-bottom: 7px; transition: all 0.18s;
-      animation: fadeInUp 0.3s ease both;
+    .song-table td { padding:10px 12px; vertical-align:middle; }
+    .song-table tr:hover td { background:var(--card-hover); }
+    .st-info { display:flex; align-items:center; gap:12px; }
+    .st-thumb {
+      width:44px; height:44px; border-radius:6px; flex-shrink:0;
+      background:var(--elevated); display:flex; align-items:center;
+      justify-content:center; font-size:20px; overflow:hidden;
     }
-    .song-item:hover { border-color: var(--border-hover); background: var(--card-hover); }
-    .si-thumb {
-      width: 46px; height: 46px; border-radius: 8px;
-      background: var(--surface); flex-shrink: 0; overflow: hidden;
-      display: flex; align-items: center; justify-content: center; font-size: 19px;
+    .st-thumb img { width:100%; height:100%; object-fit:cover; }
+    .st-title  { font-weight:700; font-size:14px; }
+    .st-artist { font-size:12px; color:var(--text-2); }
+    .genre-badge {
+      display:inline-block; padding:3px 9px; border-radius:500px;
+      background:var(--elevated); font-size:11px; color:var(--text-2); font-weight:600;
     }
-    .si-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .si-info  { flex: 1; min-width: 0; }
-    .si-title { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .si-meta  { color: var(--text-2); font-size: 12px; margin-top: 2px; }
-    .si-meta-right { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-    .si-badge {
-      font-size: 11px; color: var(--muted);
-      background: var(--surface); border: 1px solid var(--border);
-      padding: 2px 9px; border-radius: 50px; white-space: nowrap;
-    }
-
-    .empty-cat { text-align: center; padding: 50px 20px; color: var(--muted); }
-    .empty-cat .ec-ic { font-size: 44px; margin-bottom: 12px; opacity: 0.5; }
-
-    /* ── Artist suggestions ── */
-    .art-suggests { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-    .art-sug-btn {
-      padding: 4px 12px; border-radius: 50px;
-      border: 1px solid var(--border); background: var(--surface);
-      color: var(--text-2); cursor: pointer; font-size: 12px;
-      transition: all 0.18s; font-family: var(--font-body);
-    }
-    .art-sug-btn:hover { border-color: var(--primary); color: var(--accent); }
+    .empty-state { text-align:center; padding:60px 20px; color:var(--text-2); }
   </style>
 </head>
 <body>
 
 <nav class="navbar">
-  <a class="logo" href="play.html">
-    <div class="logo-icon">🎧</div>Listen<span>Me</span>
+  <a href="play.html" class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+        <circle cx="12" cy="12" r="12" fill="#1db954"/>
+        <path d="M6.5 8.8c3.2-1 6.8-.8 9.5.9" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M7 11.8c2.8-.8 5.6-.6 7.8.7" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M7.5 14.6c2.1-.6 4.2-.4 5.8.5" stroke="#000" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    Listen<span>Me</span>
   </a>
   <div class="nav-links">
     <a href="play.html">Discover</a>
     <a href="upload.html" class="active">Upload</a>
-    <a href="play.html#profile">Profile</a>
   </div>
-  <div style="display:flex;align-items:center;gap:9px;">
-    <span class="admin-badge">⚡ Admin</span>
-    <button class="btn-logout" onclick="logout()">Sign Out</button>
-  </div>
+  <button class="btn-logout" onclick="doLogout()">Log out</button>
 </nav>
 
-<!-- Access denied -->
-<div id="accessDenied" class="page-container access-denied" style="display:none;">
-  <div class="ad-icon">🚫</div>
-  <h2>Admin Only</h2>
-  <p>Only admins can upload music.<br/>You can still listen to everything!</p>
-  <a href="play.html" class="btn btn-primary" style="width:auto;display:inline-flex;">← Back to Library</a>
+<div class="page-container" id="accessDenied" style="display:none;">
+  <div class="access-denied">
+    <div class="ad-icon">🔒</div>
+    <h2>Admin Only</h2>
+    <p>Only admins can upload music.</p>
+    <a href="play.html" class="btn btn-primary" style="max-width:200px;">Go to Library</a>
+  </div>
 </div>
 
-<!-- Upload section -->
-<div id="uploadSection" class="page-container" style="display:none;">
-  <h1 class="page-title">Upload <span>Music</span></h1>
-  <p class="page-desc">Add tracks to the ListenMe library for everyone.</p>
+<div class="page-container" id="pageBody" style="display:none;">
+  <a href="play.html" class="back-link">← Back to Library</a>
+  <div class="page-title">Upload <span>Music</span></div>
+  <p class="page-desc">Add songs to the ListenMe library.</p>
 
   <div class="upload-wrap">
-    <!-- Left: audio -->
+    <!-- Audio drop zone -->
     <div>
       <div class="drop-zone" id="audioZone">
         <input type="file" id="audioFile" accept=".mp3,.wav,.ogg,.flac,.m4a,.aac" onchange="audioSelected(this)" />
-        <div class="drop-icon">🎵</div>
-        <div class="drop-title">Drop audio file here</div>
-        <div class="drop-sub">MP3 · WAV · FLAC · OGG · M4A · AAC · up to 150MB</div>
+        <div class="dz-icon">🎵</div>
+        <div class="dz-main">Drop audio file here</div>
+        <div class="dz-sub">MP3 · WAV · OGG · FLAC · M4A · AAC</div>
       </div>
-
-      <div class="file-selected" id="filePreview">
-        <div class="file-name" id="fileName"></div>
-        <div class="file-size" id="fileSize"></div>
+      <div class="file-preview" id="filePreview">
+        <div class="fp-name" id="fileName"></div>
+        <div class="fp-size" id="fileSize"></div>
       </div>
-
-      <div class="prog-wrap"  id="progWrap"><div class="prog-fill" id="progFill"></div></div>
+      <div class="prog-wrap" id="progWrap"><div class="prog-fill" id="progFill"></div></div>
       <div class="prog-label" id="progLabel"></div>
-
-      <div class="alert alert-error"   id="upErr" style="margin-top:14px;"></div>
-      <div class="alert alert-success" id="upSuc" style="margin-top:14px;"></div>
+      <div id="upErr" class="alert alert-error"   style="margin-top:12px;"></div>
+      <div id="upSuc" class="alert alert-success" style="margin-top:12px;"></div>
+      <button class="btn btn-primary" id="upBtn" onclick="doUpload()" style="margin-top:16px;" disabled>
+        <span id="upBtnText">Upload Song</span>
+        <span class="spinner" id="upSpinner"></span>
+      </button>
     </div>
 
-    <!-- Right: metadata -->
+    <!-- Metadata -->
     <div class="meta-card">
+      <div style="margin-bottom:20px;">
+        <label>Cover Art / Thumbnail</label>
+
+        <!-- FIXED: label wraps entire box. Clicking anywhere opens file dialog. -->
+        <label class="cover-label" id="coverLabel">
+          <!-- Input hidden, triggered by parent label -->
+          <input type="file" id="coverFile" accept="image/jpeg,image/png,image/webp,image/gif" onchange="coverSelected(this)" />
+
+          <!-- Preview fills box after selection -->
+          <img class="cover-preview" id="coverPreview" alt="Cover preview" />
+
+          <!-- Placeholder before selection -->
+          <div class="cover-placeholder" id="coverPlaceholder">
+            <span class="cover-placeholder-icon">🖼️</span>
+            <span class="cover-placeholder-text">Click to upload cover art</span>
+            <span style="font-size:11px;color:var(--muted);">JPG · PNG · WEBP</span>
+          </div>
+
+          <!-- Hover overlay after selection -->
+          <div class="cover-change-ov" id="coverChangeOv">✏️ Change cover</div>
+        </label>
+        <div id="coverName" style="font-size:11px;color:var(--text-2);margin-top:4px;"></div>
+      </div>
+
       <div class="form-group">
         <label>Song Title *</label>
-        <input type="text" id="title" placeholder="e.g. Blinding Lights" />
+        <input type="text" id="title" placeholder="e.g. Blinding Lights" oninput="checkReady()" />
       </div>
       <div class="form-group">
         <label>Artist *</label>
-        <input type="text" id="artist" placeholder="e.g. The Weeknd" oninput="suggestArtist(this.value)" />
-        <div id="artSuggests" class="art-suggests" style="display:none;"></div>
+        <input type="text" id="artist" placeholder="e.g. The Weeknd" oninput="checkReady()" />
       </div>
       <div class="form-group">
         <label>Album</label>
@@ -200,86 +197,47 @@
       <div class="form-group">
         <label>Genre</label>
         <select id="genre">
-          <option value="">Select genre…</option>
-          <option>Pop</option><option>Hip-Hop</option><option>R&B</option>
-          <option>Electronic</option><option>Rock</option><option>Indie</option>
-          <option>Jazz</option><option>Classical</option><option>Country</option>
-          <option>Lo-Fi</option><option>Afrobeats</option><option>Reggae</option>
-          <option>K-Pop</option><option>Latin</option><option>Other</option>
+          <option value="">— Select genre —</option>
+          <option>Pop</option><option>Hip-Hop</option><option>R&amp;B</option>
+          <option>Rock</option><option>Electronic</option><option>Jazz</option>
+          <option>Classical</option><option>Indie</option><option>Other</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Cover Art (optional)</label>
-        <div class="cover-zone" id="coverZone">
-          <input type="file" id="coverFile" accept="image/*" onchange="coverSelected(this)" />
-          <img class="cover-preview" id="coverPreview" alt="" />
-          <div class="cover-change-ov">✏️ Change cover</div>
-          <div id="coverPlaceholder" style="text-align:center;">
-            <div style="font-size:32px;margin-bottom:8px;">🖼️</div>
-            <div style="font-size:13px;color:var(--text-2);">Upload cover art</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:3px;">JPG · PNG · WEBP</div>
-          </div>
-        </div>
-      </div>
-      <button class="btn btn-primary" id="upBtn" onclick="doUpload()">
-        <span id="upBtnText">⬆️ Upload to Library</span>
-        <div class="spinner" id="upSpinner"></div>
-      </button>
     </div>
   </div>
 
   <!-- Catalog -->
   <div class="catalog">
     <div class="cat-hdr">
-      <div class="cat-title">Library <span style="color:var(--accent);">Catalog</span></div>
-      <button class="btn btn-secondary btn-sm" onclick="loadCatalog()">↻ Refresh</button>
+      <div class="cat-title">All Songs</div>
+      <span id="songCount" style="font-size:13px;color:var(--text-2);"></span>
     </div>
-    <div id="catalogList"></div>
+    <div id="catalogBody"><div class="empty-state">Loading…</div></div>
   </div>
 </div>
 
-<script src="config.js"></script>
 <script>
-requireAuth();
+const API   = window.API_BASE || '/api';
+const token = localStorage.getItem('token');
+const user  = JSON.parse(localStorage.getItem('user') || '{}');
 
-let existingArtists = [];
+if (!token) location.href = 'login.html';
+else if (!user.is_admin) document.getElementById('accessDenied').style.display = 'block';
+else { document.getElementById('pageBody').style.display = 'block'; loadCatalog(); }
 
-(async function checkAccess() {
-  if (!isAdmin()) {
-    try {
-      const { user } = await api.get('/auth/me');
-      if (!user.is_admin) { document.getElementById('accessDenied').style.display='block'; return; }
-      const stored = getUser();
-      if (stored) { stored.is_admin=true; localStorage.setItem('user',JSON.stringify(stored)); }
-    } catch(e) {
-      document.getElementById('accessDenied').style.display='block'; return;
-    }
-  }
-  document.getElementById('uploadSection').style.display='block';
-  loadCatalog();
-  loadArtistList();
-})();
-
-async function loadArtistList() {
-  try {
-    const d = await api.get('/artists');
-    existingArtists = d.artists.map(a=>a.artist);
-  } catch(e) {}
+function apiCall(method, path, body, isForm) {
+  return fetch(API + path, {
+    method,
+    headers: isForm ? { Authorization:`Bearer ${token}` }
+                    : { 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+    body: isForm ? body : (body ? JSON.stringify(body) : undefined)
+  }).then(async r => { const j=await r.json(); if(!r.ok) throw new Error(j.error||'Failed'); return j; });
 }
 
-function suggestArtist(val) {
-  const box = document.getElementById('artSuggests');
-  if (!val||val.length<2) { box.style.display='none'; return; }
-  const hits = existingArtists.filter(a=>a.toLowerCase().includes(val.toLowerCase())&&a.toLowerCase()!==val.toLowerCase());
-  if (!hits.length) { box.style.display='none'; return; }
-  box.style.display='flex';
-  box.innerHTML = hits.slice(0,5).map(a=>
-    `<button class="art-sug-btn" onclick="pickArtist('${esc(a)}')">${esc(a)}</button>`
-  ).join('');
-}
-function pickArtist(name) {
-  document.getElementById('artist').value=name;
-  document.getElementById('artSuggests').style.display='none';
+function doLogout() { localStorage.clear(); location.href='login.html'; }
+
+function showAlert(id, msg, show=true) {
+  const el=document.getElementById(id); el.textContent=msg; el.style.display=show?'block':'none';
 }
 
 function fmtBytes(b) {
@@ -287,27 +245,42 @@ function fmtBytes(b) {
   return b<1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(1)+' MB';
 }
 
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function checkReady() {
+  const a=!!document.getElementById('audioFile').files[0];
+  const t=!!document.getElementById('title').value.trim();
+  const r=!!document.getElementById('artist').value.trim();
+  document.getElementById('upBtn').disabled=!(a&&t&&r);
+}
+
 function audioSelected(input) {
-  const file=input.files[0]; if(!file) return;
-  document.getElementById('fileName').textContent=file.name;
-  document.getElementById('fileSize').textContent=fmtBytes(file.size);
+  const f=input.files[0]; if(!f) return;
+  document.getElementById('fileName').textContent=f.name;
+  document.getElementById('fileSize').textContent=fmtBytes(f.size);
   document.getElementById('filePreview').style.display='block';
   const t=document.getElementById('title');
-  if(!t.value) t.value=file.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
+  if(!t.value) t.value=f.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
+  checkReady();
 }
 
 function coverSelected(input) {
-  const file=input.files[0]; if(!file) return;
+  const f=input.files[0]; if(!f) return;
   const r=new FileReader();
   r.onload=e=>{
     const img=document.getElementById('coverPreview');
-    img.src=e.target.result; img.style.display='block';
+    img.src=e.target.result;
+    img.style.display='block';
     document.getElementById('coverPlaceholder').style.display='none';
+    document.getElementById('coverLabel').classList.add('has-cover');
+    document.getElementById('coverName').textContent='✓ '+f.name;
   };
-  r.readAsDataURL(file);
+  r.readAsDataURL(f);
 }
 
-// Drag & drop
+// Drag & drop on audio zone
 const zone=document.getElementById('audioZone');
 zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('dragover'); });
 zone.addEventListener('dragleave',()=>zone.classList.remove('dragover'));
@@ -319,28 +292,26 @@ zone.addEventListener('drop', e=>{
   audioSelected(document.getElementById('audioFile'));
 });
 
-function showAlert(id,msg,show=true) {
-  const el=document.getElementById(id);
-  el.textContent=msg; el.style.display=show?'block':'none';
-}
-
 async function doUpload() {
   showAlert('upErr','',false); showAlert('upSuc','',false);
   const audioFile=document.getElementById('audioFile').files[0];
-  const title    =document.getElementById('title').value.trim();
-  const artist   =document.getElementById('artist').value.trim();
-  const album    =document.getElementById('album').value.trim();
-  const genre    =document.getElementById('genre').value;
   const coverFile=document.getElementById('coverFile').files[0];
+  const title=document.getElementById('title').value.trim();
+  const artist=document.getElementById('artist').value.trim();
+  const album=document.getElementById('album').value.trim();
+  const genre=document.getElementById('genre').value;
 
   if(!audioFile) return showAlert('upErr','Please select an audio file.');
   if(!title)     return showAlert('upErr','Song title is required.');
   if(!artist)    return showAlert('upErr','Artist name is required.');
 
   const fd=new FormData();
-  fd.append('audio',audioFile); fd.append('title',title); fd.append('artist',artist);
-  fd.append('album',album); fd.append('genre',genre);
-  if(coverFile) fd.append('cover',coverFile);
+  fd.append('audio',audioFile);
+  fd.append('title',title);
+  fd.append('artist',artist);
+  if(album) fd.append('album',album);
+  if(genre) fd.append('genre',genre);
+  if(coverFile) fd.append('cover',coverFile);  // thumbnail sent to backend
 
   document.getElementById('progWrap').style.display='block';
   document.getElementById('progLabel').style.display='block';
@@ -356,71 +327,73 @@ async function doUpload() {
   },200);
 
   try {
-    await api.upload('/songs/upload',fd);
+    await apiCall('POST','/songs/upload',fd,true);
     clearInterval(timer);
     document.getElementById('progFill').style.width='100%';
-    document.getElementById('progLabel').textContent='Upload complete ✓';
-    showAlert('upSuc','🎉 Song added to the library!');
-    existingArtists=[...new Set([...existingArtists,artist])];
+    document.getElementById('progLabel').textContent='Upload complete!';
+    showAlert('upSuc',`✅ "${title}" uploaded successfully!`);
     setTimeout(()=>{
-      document.getElementById('audioFile').value='';
-      document.getElementById('coverFile').value='';
-      ['title','artist','album'].forEach(id=>document.getElementById(id).value='');
+      ['audioFile','coverFile','title','artist','album'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
       document.getElementById('genre').value='';
       document.getElementById('filePreview').style.display='none';
-      document.getElementById('coverPreview').style.display='none';
-      document.getElementById('coverPlaceholder').style.display='block';
       document.getElementById('progWrap').style.display='none';
       document.getElementById('progLabel').style.display='none';
+      document.getElementById('coverPreview').style.display='none';
+      document.getElementById('coverPreview').src='';
+      document.getElementById('coverPlaceholder').style.display='flex';
+      document.getElementById('coverLabel').classList.remove('has-cover');
+      document.getElementById('coverName').textContent='';
+      document.getElementById('upBtnText').style.display='inline';
+      document.getElementById('upSpinner').style.display='none';
+      document.getElementById('upBtn').disabled=true;
       loadCatalog();
-    },2000);
-  } catch(e) {
+    },1500);
+  } catch(err) {
     clearInterval(timer);
-    document.getElementById('progWrap').style.display='none';
-    document.getElementById('progLabel').style.display='none';
-    showAlert('upErr',e.error||'Upload failed. Please try again.');
-  } finally {
+    showAlert('upErr',err.message);
     document.getElementById('upBtnText').style.display='inline';
     document.getElementById('upSpinner').style.display='none';
     document.getElementById('upBtn').disabled=false;
   }
 }
 
-async function deleteSong(id) {
-  if(!confirm('Remove this song permanently?')) return;
-  try { await api.del(`/songs/${id}`); loadCatalog(); }
-  catch(e) { alert(e.error||'Failed to delete.'); }
-}
-
 async function loadCatalog() {
-  const c=document.getElementById('catalogList');
-  c.innerHTML='<div style="color:var(--muted);padding:16px 0;font-size:13px;">Loading catalog…</div>';
   try {
-    const d=await api.get('/songs/my');
-    if(!d.songs.length) {
-      c.innerHTML=`<div class="empty-cat"><div class="ec-ic">🎵</div><div>No songs yet. Upload the first track!</div></div>`;
+    const {songs}=await apiCall('GET','/songs/my');
+    document.getElementById('songCount').textContent=`${songs.length} songs`;
+    if(!songs.length){
+      document.getElementById('catalogBody').innerHTML='<div class="empty-state">No songs yet.</div>';
       return;
     }
-    c.innerHTML=d.songs.map((s,i)=>`
-      <div class="song-item" style="animation-delay:${i*0.03}s">
-        <div class="si-thumb">${s.cover_url?`<img src="${esc(s.cover_url)}" />`:'🎵'}</div>
-        <div class="si-info">
-          <div class="si-title">${esc(s.title)}</div>
-          <div class="si-meta">${esc(s.artist)}${s.album?' · '+esc(s.album):''}${s.genre?' · '+esc(s.genre):''}</div>
-        </div>
-        <div class="si-meta-right">
-          <span class="si-badge">▶ ${s.play_count||0} plays</span>
-          <span class="si-badge">${fmtBytes(s.file_size)}</span>
-          <button class="btn btn-danger btn-sm" onclick="deleteSong(${s.id})">🗑</button>
-        </div>
-      </div>
-    `).join('');
+    document.getElementById('catalogBody').innerHTML=`
+      <table class="song-table">
+        <thead><tr><th>#</th><th>Song</th><th>Genre</th><th>Size</th><th>Plays</th><th></th></tr></thead>
+        <tbody>${songs.map((s,i)=>`
+          <tr>
+            <td style="color:var(--text-2);font-size:12px;">${i+1}</td>
+            <td>
+              <div class="st-info">
+                <div class="st-thumb">${s.cover_url?`<img src="${esc(s.cover_url)}" loading="lazy"/>`:'🎵'}</div>
+                <div><div class="st-title">${esc(s.title)}</div><div class="st-artist">${esc(s.artist)}</div></div>
+              </div>
+            </td>
+            <td>${s.genre?`<span class="genre-badge">${esc(s.genre)}</span>`:'—'}</td>
+            <td style="color:var(--text-2);font-size:12px;">${fmtBytes(s.file_size)}</td>
+            <td style="color:var(--text-2);font-size:12px;">${s.play_count||0}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteSong(${s.id},'${esc(s.title)}')">Delete</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
   } catch(e) {
-    c.innerHTML='<div style="color:var(--danger);padding:16px 0;">Failed to load catalog.</div>';
+    document.getElementById('catalogBody').innerHTML=`<div class="empty-state">Failed: ${e.message}</div>`;
   }
 }
 
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+async function deleteSong(id,title) {
+  if(!confirm(`Delete "${title}"?`)) return;
+  try { await apiCall('DELETE',`/songs/${id}`); loadCatalog(); }
+  catch(e) { alert('Delete failed: '+e.message); }
+}
 </script>
 </body>
 </html>
